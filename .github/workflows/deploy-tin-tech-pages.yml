@@ -39,7 +39,24 @@ jobs:
           rm -rf _site
           mkdir -p _site/tin-tech-packaging
           cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
+          cp tin-tech-packaging/brand-logo.css _site/tin-tech-packaging/brand-logo.css
+          cp tin-tech-packaging/tin-tech-logo.svg _site/tin-tech-packaging/tin-tech-logo.svg
+          cp tin-tech-packaging/tin-tech-logo-light.svg _site/tin-tech-packaging/tin-tech-logo-light.svg
           touch _site/.nojekyll
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          page = Path("_site/tin-tech-packaging/index.html")
+          html = page.read_text(encoding="utf-8")
+          branding = '''  <link rel="stylesheet" href="./brand-logo.css">
+            <link rel="icon" type="image/svg+xml" href="./tin-tech-logo.svg">
+          '''
+          if "brand-logo.css" not in html:
+              html = html.replace("</head>", branding + "</head>", 1)
+          page.write_text(html, encoding="utf-8")
+          PY
+
           cat > _site/index.html <<'HTML'
           <!doctype html>
           <html lang="en">
@@ -49,6 +66,7 @@ jobs:
             <meta http-equiv="refresh" content="0; url=./tin-tech-packaging/">
             <title>Tin Tech Packaging</title>
             <link rel="canonical" href="./tin-tech-packaging/">
+            <link rel="icon" type="image/svg+xml" href="./tin-tech-packaging/tin-tech-logo.svg">
           </head>
           <body>
             <p><a href="./tin-tech-packaging/">Open Tin Tech Packaging</a></p>
