@@ -1,0 +1,77 @@
+/* Tin Tech official logo integration — based on the supplied approved mark. */
+.mark {
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px;
+  border-radius: 14px !important;
+  overflow: hidden;
+  font-size: 0 !important;
+  color: transparent !important;
+  background-color: #ffffff !important;
+  background-image: url("./tin-tech-logo.svg") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 88% auto !important;
+  border: 1px solid rgba(255,255,255,.82);
+  box-shadow: 0 10px 30px rgba(72,215,255,.18), inset 0 0 0 1px rgba(7,21,37,.05) !important;
+}
+
+.brand {
+  gap: 13px !important;
+}
+
+.visual::before {
+  content: "";
+  position: absolute;
+  inset: 68px 48px 74px;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("./tin-tech-logo-light.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: .085;
+  filter: drop-shadow(0 20px 50px rgba(72,215,255,.15));
+}
+
+.visual .us-badge,
+.visual .product-render,
+.visual .route {
+  z-index: 2;
+}
+
+.footer .foot > div:first-child b {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer .foot > div:first-child b::before {
+  content: "";
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: inline-block;
+  background-image: url("./tin-tech-logo-light.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+@media (max-width: 720px) {
+  .mark {
+    width: 44px !important;
+    height: 44px !important;
+    flex-basis: 44px;
+  }
+
+  .brand > span:last-child {
+    font-size: .82rem;
+    letter-spacing: .025em;
+  }
+
+  .visual::before {
+    inset: 74px 28px 78px;
+    opacity: .075;
+  }
+}
