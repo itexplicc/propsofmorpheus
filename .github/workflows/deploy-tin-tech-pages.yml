@@ -44,9 +44,20 @@ jobs:
           mkdir -p _site/nautical-naturals
 
           cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
-          cp tin-tech-packaging/professional.css _site/tin-tech-packaging/professional.css
+          cp tin-tech-packaging/about.html _site/tin-tech-packaging/about.html
+          cp tin-tech-packaging/capabilities.html _site/tin-tech-packaging/capabilities.html
+          cp tin-tech-packaging/portfolio.html _site/tin-tech-packaging/portfolio.html
+          cp tin-tech-packaging/product.html _site/tin-tech-packaging/product.html
+          cp tin-tech-packaging/contact.html _site/tin-tech-packaging/contact.html
+          cp tin-tech-packaging/privacy.html _site/tin-tech-packaging/privacy.html
+          cp tin-tech-packaging/terms.html _site/tin-tech-packaging/terms.html
+          cp tin-tech-packaging/404.html _site/tin-tech-packaging/404.html
+          cp tin-tech-packaging/robots.txt _site/tin-tech-packaging/robots.txt
+          cp tin-tech-packaging/sitemap.xml _site/tin-tech-packaging/sitemap.xml
           cp tin-tech-packaging/tin-tech-logo.svg _site/tin-tech-packaging/tin-tech-logo.svg
           cp tin-tech-packaging/tin-tech-logo-light.svg _site/tin-tech-packaging/tin-tech-logo-light.svg
+          cp -R tin-tech-packaging/assets _site/tin-tech-packaging/assets
+          cp -R tin-tech-packaging/admin _site/tin-tech-packaging/admin
 
           cp -R nautical-naturals-brand/. _site/nautical-naturals-brand/
           cp -R nautical-naturals/. _site/nautical-naturals/
