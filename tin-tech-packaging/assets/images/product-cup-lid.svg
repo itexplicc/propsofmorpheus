@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#edf6fb"/><stop offset="1" stop-color="#fbfcfd"/></linearGradient>
+ <linearGradient id="cup" x1=".15" y1="0" x2=".85" y2="1"><stop stop-color="#fdfefe"/><stop offset=".55" stop-color="#dfe8ee"/><stop offset="1" stop-color="#aebcc7"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#f8fafb"/><stop offset=".25" stop-color="#9daab4"/><stop offset=".48" stop-color="#eef2f5"/><stop offset=".72" stop-color="#788792"/><stop offset="1" stop-color="#dce3e8"/></linearGradient>
+ <filter id="s"><feDropShadow dx="0" dy="32" stdDeviation="25" flood-color="#071525" flood-opacity=".2"/></filter>
+</defs>
+<rect width="1200" height="900" fill="url(#bg)"/>
+<ellipse cx="596" cy="722" rx="340" ry="70" fill="#071525" opacity=".09"/>
+<g filter="url(#s)">
+ <path d="M320 300h520l-46 382c-7 55-54 96-109 96H475c-55 0-102-41-109-96L320 300Z" fill="url(#cup)" stroke="#91a3b0" stroke-width="4"/>
+ <ellipse cx="580" cy="301" rx="260" ry="94" fill="#dce6ed" stroke="#8fa1ad" stroke-width="5"/>
+ <ellipse cx="580" cy="285" rx="224" ry="72" fill="#f7fafb" opacity=".9"/>
+ <g transform="translate(680 188) rotate(-9)">
+   <ellipse cx="0" cy="0" rx="270" ry="100" fill="url(#metal)" stroke="#6c7a85" stroke-width="5"/>
+   <ellipse cx="0" cy="-7" rx="225" ry="72" fill="#d8e0e5" stroke="#f9fbfc" stroke-width="4"/>
+   <ellipse cx="0" cy="-7" rx="174" ry="49" fill="#123b61"/>
+   <path d="M-100-7h200" stroke="#79dff3" stroke-width="8" stroke-linecap="round" opacity=".7"/>
+ </g>
+ <path d="M390 460h380" stroke="#fff" stroke-opacity=".8" stroke-width="12" stroke-linecap="round"/>
+</g>
+</svg>
