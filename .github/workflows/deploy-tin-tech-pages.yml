@@ -38,11 +38,10 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site/tin-tech-packaging
-
-          find tin-tech-packaging -maxdepth 1 -type f \
-            \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.svg' \) \
-            -exec cp {} _site/tin-tech-packaging/ \;
-
+          cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
+          cp tin-tech-packaging/professional.css _site/tin-tech-packaging/professional.css
+          cp tin-tech-packaging/tin-tech-logo.svg _site/tin-tech-packaging/tin-tech-logo.svg
+          cp tin-tech-packaging/tin-tech-logo-light.svg _site/tin-tech-packaging/tin-tech-logo-light.svg
           touch _site/.nojekyll
 
           cat > _site/index.html <<'HTML'
