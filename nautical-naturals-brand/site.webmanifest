@@ -1,0 +1,9 @@
+{
+  "name": "Nautical Naturals",
+  "short_name": "Nautical",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8f3ea",
+  "theme_color": "#061d32",
+  "icons": []
+}
