@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /propsofmorpheus/tin-tech-packaging/
+Disallow: /propsofmorpheus/tin-tech-packaging/admin/
+Sitemap: https://itexplicc.github.io/propsofmorpheus/tin-tech-packaging/sitemap.xml
