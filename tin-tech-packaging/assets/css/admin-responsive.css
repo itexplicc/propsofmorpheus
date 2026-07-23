@@ -1,0 +1,43 @@
+.toast-stack { position: fixed; right: 18px; bottom: 18px; z-index: 150; display: grid; gap: 8px; }
+.toast { min-width: 260px; max-width: 380px; padding: 13px 15px; color: var(--white); background: var(--navy); border-radius: 13px; box-shadow: var(--shadow); font-size: .78rem; animation: toast-in .22s ease; }
+.toast.success { background: #17684f; }
+.toast.error { background: #963944; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.loading-cover { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: rgba(238,243,247,.8); backdrop-filter: blur(4px); }
+.spinner { width: 44px; height: 44px; border: 4px solid #d5e2eb; border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1050px) {
+  .admin-layout { grid-template-columns: 210px 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .category-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .admin-topbar { padding: 0 12px; }
+  .admin-brand { min-width: 0; }
+  .admin-brand span { display: none; }
+  .admin-topbar-title { display: none; }
+  .topbar-link { display: none; }
+  .admin-layout { display: block; }
+  .admin-sidebar { position: sticky; top: 72px; z-index: 40; display: flex; gap: 7px; overflow-x: auto; padding: 10px 12px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .sidebar-label, .sidebar-meta { display: none; }
+  .admin-tab { width: auto; flex: 0 0 auto; margin: 0; padding: 0 13px; }
+  .admin-main { padding: 18px 12px 32px; }
+  .admin-heading { align-items: stretch; flex-direction: column; }
+  .stat-grid, .category-grid, .editor-grid { grid-template-columns: 1fr; }
+  .editor-field.full { grid-column: auto; }
+  .image-manager { grid-template-columns: repeat(2, 1fr); }
+  .modal-panel { max-height: calc(100vh - 16px); border-radius: 20px; }
+  .admin-modal { padding: 8px; }
+  .modal-body { padding: 17px; }
+  .spec-row { grid-template-columns: 1fr; padding: 10px; background: #f5f8fa; border-radius: 12px; }
+  .spec-remove { width: 100%; height: 34px; }
+}
+
+@media (max-width: 460px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .inquiry-head, .inquiry-footer { align-items: stretch; flex-direction: column; }
+}

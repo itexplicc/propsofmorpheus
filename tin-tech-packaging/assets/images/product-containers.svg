@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaf5fb"/><stop offset="1" stop-color="#fafcfd"/></linearGradient>
+ <linearGradient id="jar" x1=".1" y1=".1" x2=".9" y2="1"><stop stop-color="#ffffff"/><stop offset=".56" stop-color="#dce7ee"/><stop offset="1" stop-color="#aab9c5"/></linearGradient>
+ <linearGradient id="navy" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#2f648c"/><stop offset=".55" stop-color="#123b61"/><stop offset="1" stop-color="#071525"/></linearGradient>
+ <filter id="s"><feDropShadow dx="0" dy="30" stdDeviation="24" flood-color="#071525" flood-opacity=".19"/></filter>
+</defs>
+<rect width="1200" height="900" fill="url(#bg)"/>
+<ellipse cx="600" cy="728" rx="410" ry="72" fill="#071525" opacity=".08"/>
+<g filter="url(#s)">
+ <g transform="translate(160 196)">
+  <rect x="0" y="150" width="300" height="390" rx="64" fill="url(#jar)" stroke="#91a4b1" stroke-width="4"/>
+  <rect x="15" y="80" width="270" height="120" rx="42" fill="url(#navy)"/>
+  <path d="M45 115h210" stroke="#79dff3" stroke-opacity=".45" stroke-width="7" stroke-linecap="round"/>
+ </g>
+ <g transform="translate(490 278)">
+  <rect x="0" y="100" width="245" height="330" rx="53" fill="#dff8fd" stroke="#7eb9c8" stroke-width="4"/>
+  <rect x="10" y="35" width="225" height="105" rx="37" fill="url(#navy)"/>
+  <circle cx="122" cy="282" r="70" fill="#fff" opacity=".65"/>
+ </g>
+ <g transform="translate(760 238)">
+  <rect x="0" y="125" width="260" height="360" rx="54" fill="url(#navy)"/>
+  <rect x="10" y="54" width="240" height="115" rx="38" fill="url(#jar)" stroke="#9aaab5" stroke-width="4"/>
+  <path d="M50 310h160" stroke="#79dff3" stroke-width="10" stroke-linecap="round" opacity=".7"/>
+ </g>
+</g>
+</svg>
