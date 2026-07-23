@@ -3,12 +3,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const status = document.querySelector("[data-form-status]");
   if (!form || !window.TinTechAPI) return;
 
-  const requestedProduct = new URLSearchParams(window.location.search).get("product");
+  const params = new URLSearchParams(window.location.search);
+  const requestedProduct = params.get("product");
+  const requestedProject = params.get("project");
+  const projectType = form.querySelector("[name=project_type]");
+  const message = form.querySelector("[name=message]");
+
   if (requestedProduct) {
-    const projectType = form.querySelector("[name=project_type]");
-    const message = form.querySelector("[name=message]");
     if (projectType) projectType.value = "Product pricing / portfolio item";
     if (message) message.value = `I would like pricing and a manufacturing review for: ${requestedProduct}\n\n`;
+  } else if (requestedProject === "dedicated-line") {
+    if (projectType) projectType.value = "Dedicated production line";
+    if (message) message.value = "I would like to discuss a dedicated production line and the commercial requirements for a long-term program.\n\n";
+  } else if (requestedProject === "factory-pathway") {
+    if (projectType) projectType.value = "Sri Lanka factory pathway";
+    if (message) message.value = "I would like to discuss a dedicated manufacturing operation or factory pathway in Sri Lanka.\n\n";
   }
 
   form.addEventListener("submit", async (event) => {
