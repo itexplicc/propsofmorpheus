@@ -144,6 +144,7 @@ jobs:
 
           required_files = [
               root / 'assets/css/site-v5.css',
+              root / 'assets/css/site-v5-1.css',
               root / 'assets/css/live-editor-v1.css',
               root / 'assets/css/admin-v5.css',
               root / 'assets/js/factory-layout-v5.js',
@@ -155,9 +156,14 @@ jobs:
                   errors.append(f'Missing V5 file: {file}')
 
           site_js = (root / 'assets/js/site.js').read_text(encoding='utf-8')
-          for token in ['site-v5.css', 'factory-layout-v5.js', 'tintech_edit', 'live-editor-v1.js']:
+          for token in ['site-v5.css', 'site-v5-1.css', 'factory-layout-v5.js', 'tintech_edit', 'live-editor-v1.js']:
               if token not in site_js:
-                  errors.append(f'Site runtime missing V5 token: {token}')
+                  errors.append(f'Site runtime missing V5.1 token: {token}')
+
+          responsive_css = (root / 'assets/css/site-v5-1.css').read_text(encoding='utf-8')
+          for token in ['.hero-slide.active', 'position: relative', '.factory-media-section', '.product-v3-info > .variant-groups', 'order: 4']:
+              if token not in responsive_css:
+                  errors.append(f'V5.1 responsive stylesheet missing token: {token}')
 
           admin_brand = (root / 'assets/js/admin-brand-v4.js').read_text(encoding='utf-8')
           for token in ['admin-v5.css', 'admin-v5.js']:
@@ -188,5 +194,5 @@ jobs:
 
           if errors:
               raise SystemExit('\n'.join(errors))
-          print('Tin Tech V5 integrity checks passed.')
+          print('Tin Tech V5.1 integrity checks passed.')
           PY
