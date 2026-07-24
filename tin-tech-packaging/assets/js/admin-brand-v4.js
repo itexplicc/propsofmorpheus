@@ -1,3 +1,22 @@
+(function () {
+  "use strict";
+  const scriptBase = document.currentScript ? new URL("./", document.currentScript.src) : new URL("assets/js/", window.location.href);
+  if (!document.getElementById("tintech-admin-v5-style")) {
+    const link = document.createElement("link");
+    link.id = "tintech-admin-v5-style";
+    link.rel = "stylesheet";
+    link.href = new URL("../css/admin-v5.css", scriptBase).href;
+    document.head.appendChild(link);
+  }
+  if (!document.getElementById("tintech-admin-v5")) {
+    const script = document.createElement("script");
+    script.id = "tintech-admin-v5";
+    script.src = new URL("admin-v5.js", scriptBase).href;
+    script.async = false;
+    document.head.appendChild(script);
+  }
+})();
+
 document.addEventListener("DOMContentLoaded", async () => {
   "use strict";
   if (!window.TinTechAPI) return;
