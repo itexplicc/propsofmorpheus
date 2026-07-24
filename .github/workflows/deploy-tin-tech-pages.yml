@@ -6,8 +6,7 @@ on:
       - main
     paths:
       - 'tin-tech-packaging/**'
-      - 'nautical-naturals-brand/**'
-      - 'nautical-naturals/**'
+      - 'mako-site-source/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -40,6 +39,7 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site/tin-tech-packaging
+          mkdir -p _site/mako-pet-food
           mkdir -p _site/nautical-naturals-brand
           mkdir -p _site/nautical-naturals
 
@@ -59,8 +59,12 @@ jobs:
           cp -R tin-tech-packaging/assets _site/tin-tech-packaging/assets
           cp -R tin-tech-packaging/admin _site/tin-tech-packaging/admin
 
-          cp -R nautical-naturals-brand/. _site/nautical-naturals-brand/
-          cp -R nautical-naturals/. _site/nautical-naturals/
+          python3 mako-site-source/run-build.py _site/mako-pet-food
+
+          cat > _site/nautical-naturals-brand/index.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=../mako-pet-food/"><link rel="canonical" href="../mako-pet-food/"><title>MAKO</title></head><body><p><a href="../mako-pet-food/">Open MAKO</a></p></body></html>
+          HTML
+          cp _site/nautical-naturals-brand/index.html _site/nautical-naturals/index.html
 
           touch _site/.nojekyll
 
@@ -80,7 +84,7 @@ jobs:
           <body>
             <main>
               <h1>Public Brand Sites</h1>
-              <a href="./nautical-naturals-brand/">Nautical Naturals</a>
+              <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
               <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
             </main>
           </body>
