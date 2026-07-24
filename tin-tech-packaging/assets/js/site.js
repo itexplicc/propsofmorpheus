@@ -25,6 +25,7 @@
   }
 
   loadStylesheet("tintech-site-v5", "../css/site-v5.css");
+  loadStylesheet("tintech-site-v5-1", "../css/site-v5-1.css");
   loadScript("tintech-factory-layout-v5", "factory-layout-v5.js");
   if (new URLSearchParams(window.location.search).get("tintech_edit") === "1") {
     loadStylesheet("tintech-live-editor-style", "../css/live-editor-v1.css");
