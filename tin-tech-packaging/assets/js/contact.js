@@ -13,20 +13,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   const projectType = form.querySelector("[name=project_type]");
   const message = form.querySelector("[name=message]");
 
-  function selectProject(label) {
-    if (!projectType || !label) return;
-    const match = Array.from(projectType.options).find((option) => option.value.toLowerCase() === label.toLowerCase());
-    if (match) projectType.value = match.value;
+  function selectProject(label, keywords = []) {
+    if (!projectType) return;
+    const options = Array.from(projectType.options);
+    const exact = options.find((option) => option.value.toLowerCase() === String(label || "").toLowerCase());
+    const fuzzy = exact || options.find((option) => keywords.some((keyword) => option.value.toLowerCase().includes(keyword)));
+    if (fuzzy) projectType.value = fuzzy.value;
   }
 
   if (requestedProduct) {
-    selectProject("Product pricing / portfolio item");
+    selectProject("Product pricing / portfolio item", ["product", "pricing", "portfolio"]);
     if (message) message.value = `I would like pricing and a manufacturing review for: ${requestedProduct}${requestedVariant ? `\nSelected option: ${requestedVariant}` : ""}\n\n`;
   } else if (requestedProject === "dedicated-line") {
-    selectProject("Dedicated production line");
+    selectProject("Dedicated production line", ["dedicated", "production line"]);
     if (message) message.value = "I would like to discuss a dedicated production line and the commercial requirements for a long-term program.\n\n";
   } else if (requestedProject === "factory-pathway") {
-    selectProject("Sri Lanka factory pathway");
+    selectProject("Sri Lanka factory pathway", ["factory", "pathway", "manufacturing operation"]);
     if (message) message.value = "I would like to discuss a dedicated manufacturing operation or factory pathway in Sri Lanka.\n\n";
   }
 
