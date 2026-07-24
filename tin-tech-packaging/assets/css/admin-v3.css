@@ -200,6 +200,67 @@
 .image-manager .image-item { min-width:0; }
 .upload-progress { color:#2d6d91; font-size:.7rem; font-weight:700; }
 
+/* V3.1: keep the appearance preview inside its own track and every save control reachable. */
+.appearance-layout {
+  grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);
+}
+.appearance-controls,
+.appearance-preview-card,
+.appearance-card,
+.preview-frame-shell {
+  min-width:0;
+  max-width:100%;
+}
+.appearance-card { overflow:hidden; }
+.appearance-upload {
+  grid-template-columns:minmax(0,1fr) auto;
+}
+.appearance-upload > *,
+.appearance-upload input[type="file"] {
+  min-width:0;
+  max-width:100%;
+}
+.media-current {
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+.media-current img { flex:0 0 76px; }
+.media-current button { flex:0 0 auto; margin-left:auto; }
+.appearance-preview-card {
+  z-index:0;
+  overflow:hidden;
+}
+.admin-view[data-admin-view="appearance"] > .admin-heading {
+  position:relative;
+  z-index:2;
+}
+.appearance-savebar {
+  position:sticky;
+  bottom:14px;
+  z-index:4;
+  margin:18px -4px 0;
+  padding:14px;
+  border:1px solid #dce6ed;
+  border-radius:16px;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 14px 36px rgba(7,21,37,.12);
+  backdrop-filter:blur(12px);
+}
+
+@media (max-width:1450px) {
+  .appearance-layout { grid-template-columns:minmax(0,1fr); }
+  .appearance-preview-card {
+    position:relative;
+    top:auto;
+    width:100%;
+  }
+  #appearance-preview {
+    height:min(720px,72vh);
+    min-height:520px;
+  }
+}
+
 @media (max-width:1100px) {
   .appearance-layout { grid-template-columns:1fr; }
   .appearance-preview-card { position:relative; top:auto; }
@@ -214,7 +275,9 @@
   .appearance-upload,
   .variant-swatch-row,
   .variant-image-upload { grid-template-columns:1fr; }
+  .appearance-upload .admin-button { width:100%; }
   .variant-gallery { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  #appearance-preview { height:620px; }
+  #appearance-preview { height:620px; min-height:0; }
   .admin-topbar-title { display:none; }
+  .appearance-savebar { bottom:8px; }
 }
