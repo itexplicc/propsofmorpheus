@@ -29,12 +29,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --check tin-tech-packaging/assets/js/api-v3.js
-          node --check tin-tech-packaging/assets/js/home-v3.js
-          node --check tin-tech-packaging/assets/js/product-v3.js
-          node --check tin-tech-packaging/assets/js/admin-v3.js
-          node --check tin-tech-packaging/assets/js/portfolio.js
-          node --check tin-tech-packaging/assets/js/site.js
+          for file in \
+            tin-tech-packaging/assets/js/content-defaults-v4.js \
+            tin-tech-packaging/assets/js/api-v3.js \
+            tin-tech-packaging/assets/js/cms-v4.js \
+            tin-tech-packaging/assets/js/home-v4.js \
+            tin-tech-packaging/assets/js/global-details-v4.js \
+            tin-tech-packaging/assets/js/admin-brand-v4.js \
+            tin-tech-packaging/assets/js/cms-admin-v4.js \
+            tin-tech-packaging/assets/js/product-v3.js \
+            tin-tech-packaging/assets/js/admin-v3.js \
+            tin-tech-packaging/assets/js/portfolio.js \
+            tin-tech-packaging/assets/js/contact.js \
+            tin-tech-packaging/assets/js/site.js
+          do
+            node --check "$file"
+          done
 
       - name: Validate Tin Tech pages and local references
         shell: bash
@@ -48,8 +58,14 @@ jobs:
           root = Path('tin-tech-packaging')
           pages = [
               root / 'index.html',
+              root / 'about.html',
+              root / 'capabilities.html',
               root / 'portfolio.html',
               root / 'product.html',
+              root / 'contact.html',
+              root / 'privacy.html',
+              root / 'terms.html',
+              root / '404.html',
               root / 'admin/index.html',
           ]
 
@@ -99,9 +115,23 @@ jobs:
                       errors.append(f'{page}: missing local reference {ref}')
 
           required = {
-              root / 'index.html': ['data-managed-hero-image', 'data-managed-factory', 'home-v3.js'],
-              root / 'product.html': ['product-v3.js', 'data-product-detail'],
-              root / 'admin/index.html': ['data-admin-tab="appearance"', 'appearance-preview', 'variant-editor', 'admin-v3.js'],
+              root / 'index.html': ['data-cms-page="home"', 'home-v4.js', 'cms-v4.js', 'site-v4.css'],
+              root / 'about.html': ['data-cms-page="about"', 'cms-v4.js'],
+              root / 'capabilities.html': ['data-cms-page="capabilities"', 'cms-v4.js'],
+              root / 'contact.html': ['data-cms-page="contact"', 'cms-v4.js', 'contact.js'],
+              root / 'portfolio.html': ['data-portfolio-grid', 'cms-v4.js', 'portfolio.js'],
+              root / 'product.html': ['product-v3.js', 'data-product-detail', 'cms-v4.js'],
+              root / 'admin/index.html': [
+                  'data-admin-tab="content"',
+                  'data-admin-view="content"',
+                  'cms-editor-root',
+                  'cms-save-all',
+                  'data-admin-tab="appearance"',
+                  'appearance-preview',
+                  'variant-editor',
+                  'cms-admin-v4.js',
+                  'admin-v4.css',
+              ],
           }
           for page, tokens in required.items():
               text = page.read_text(encoding='utf-8')
@@ -109,7 +139,24 @@ jobs:
                   if token not in text:
                       errors.append(f'{page}: required token missing: {token}')
 
+          index_text = (root / 'index.html').read_text(encoding='utf-8')
+          if 'home-v3.js' in index_text:
+              errors.append('Homepage still references the retired single-image home-v3 runtime.')
+
+          defaults = (root / 'assets/js/content-defaults-v4.js').read_text(encoding='utf-8')
+          for token in [
+              'window.TinTechContentDefaults',
+              'window.TinTechDefaultHeroSlides',
+              'company_name',
+              'proof_items',
+              'capabilities',
+              'project_types',
+              'logo_url',
+          ]:
+              if token not in defaults:
+                  errors.append(f'Content defaults missing required token: {token}')
+
           if errors:
               raise SystemExit('\n'.join(errors))
-          print('Tin Tech integrity checks passed.')
+          print('Tin Tech V4 integrity checks passed.')
           PY
