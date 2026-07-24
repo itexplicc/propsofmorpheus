@@ -1,0 +1,46 @@
+/* Tin Tech V5 admin: factory readability controls and live editor launch. */
+.tt-live-launch {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:40px;
+  padding:0 13px;
+  border-radius:11px;
+  border:1px solid rgba(72,215,255,.45);
+  background:rgba(72,215,255,.12);
+  color:#bcefff;
+  text-decoration:none;
+  font-size:.72rem;
+  font-weight:800;
+  white-space:nowrap;
+}
+.tt-live-launch:hover { background:#48d7ff; color:#071525; }
+.tt-live-content-launch { background:#071525; color:#fff; border-color:#071525; }
+.tt-readability-controls {
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid #e0e9ef;
+}
+.tt-readability-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:14px; }
+.tt-readability-head h3 { margin:0; color:#17344c; font-size:.92rem; }
+.tt-readability-head p { margin:4px 0 0; color:#6c8090; font-size:.7rem; line-height:1.5; }
+.tt-readability-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.tt-readability-field { display:grid; gap:6px; }
+.tt-readability-field.full { grid-column:1/-1; }
+.tt-readability-field label { color:#526a7e; font-size:.7rem; font-weight:800; }
+.tt-readability-pair { display:grid; grid-template-columns:1fr 82px; gap:10px; align-items:center; }
+.tt-readability-field input,.tt-readability-field select { width:100%; box-sizing:border-box; min-height:42px; border:1px solid #d4e0e8; border-radius:11px; background:#fff; color:#19354c; padding:0 10px; font:inherit; font-size:.78rem; }
+.tt-readability-field input[type="range"] { padding:0; accent-color:#1573a6; }
+.tt-readability-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+.tt-readability-note { margin-top:12px; padding:10px 11px; border-radius:11px; background:#eef8fb; color:#496a7e; font-size:.68rem; line-height:1.5; }
+#appearance-preview { height:min(860px,78vh); min-height:620px; }
+.preview-frame-shell { overflow:auto; }
+@media (max-width:720px) {
+  .tt-readability-grid { grid-template-columns:1fr; }
+  .tt-readability-field.full { grid-column:auto; }
+  .tt-readability-pair { grid-template-columns:1fr 76px; }
+  #appearance-preview { height:720px; min-height:540px; }
+  .admin-topbar-actions { gap:6px; }
+  .tt-live-launch { padding:0 10px; font-size:.66rem; }
+}

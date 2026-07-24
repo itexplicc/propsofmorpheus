@@ -37,6 +37,9 @@ jobs:
             tin-tech-packaging/assets/js/global-details-v4.js \
             tin-tech-packaging/assets/js/admin-brand-v4.js \
             tin-tech-packaging/assets/js/cms-admin-v4.js \
+            tin-tech-packaging/assets/js/factory-layout-v5.js \
+            tin-tech-packaging/assets/js/live-editor-v1.js \
+            tin-tech-packaging/assets/js/admin-v5.js \
             tin-tech-packaging/assets/js/product-v3.js \
             tin-tech-packaging/assets/js/admin-v3.js \
             tin-tech-packaging/assets/js/portfolio.js \
@@ -139,6 +142,33 @@ jobs:
                   if token not in text:
                       errors.append(f'{page}: required token missing: {token}')
 
+          required_files = [
+              root / 'assets/css/site-v5.css',
+              root / 'assets/css/live-editor-v1.css',
+              root / 'assets/css/admin-v5.css',
+              root / 'assets/js/factory-layout-v5.js',
+              root / 'assets/js/live-editor-v1.js',
+              root / 'assets/js/admin-v5.js',
+          ]
+          for file in required_files:
+              if not file.exists():
+                  errors.append(f'Missing V5 file: {file}')
+
+          site_js = (root / 'assets/js/site.js').read_text(encoding='utf-8')
+          for token in ['site-v5.css', 'factory-layout-v5.js', 'tintech_edit', 'live-editor-v1.js']:
+              if token not in site_js:
+                  errors.append(f'Site runtime missing V5 token: {token}')
+
+          admin_brand = (root / 'assets/js/admin-brand-v4.js').read_text(encoding='utf-8')
+          for token in ['admin-v5.css', 'admin-v5.js']:
+              if token not in admin_brand:
+                  errors.append(f'Admin bootstrap missing V5 token: {token}')
+
+          live_editor = (root / 'assets/js/live-editor-v1.js').read_text(encoding='utf-8')
+          for token in ['adminData', 'save-site-content', 'save-hero-slides', 'Factory readability', 'beforeunload']:
+              if token not in live_editor:
+                  errors.append(f'Live editor missing safety token: {token}')
+
           index_text = (root / 'index.html').read_text(encoding='utf-8')
           if 'home-v3.js' in index_text:
               errors.append('Homepage still references the retired single-image home-v3 runtime.')
@@ -158,5 +188,5 @@ jobs:
 
           if errors:
               raise SystemExit('\n'.join(errors))
-          print('Tin Tech V4 integrity checks passed.')
+          print('Tin Tech V5 integrity checks passed.')
           PY

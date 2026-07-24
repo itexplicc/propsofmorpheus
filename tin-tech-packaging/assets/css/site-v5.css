@@ -1,0 +1,97 @@
+/* Tin Tech V5: adjustable factory readability and safe live-edit affordances */
+.factory-media {
+  --factory-overlay-strong: .98;
+  --factory-overlay-mid: .92;
+  --factory-overlay-soft: .5;
+  --factory-overlay-fade: .08;
+  --factory-stop-strong: 28%;
+  --factory-stop-mid: 55%;
+  --factory-stop-soft: 80%;
+  --factory-copy-max: 62%;
+  --factory-align: center;
+  --factory-text-align: left;
+  min-height: var(--factory-height, 520px);
+  height: auto;
+  justify-content: flex-start;
+  align-items: var(--factory-align);
+}
+.factory-media::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(255 255 255 / var(--factory-overlay-strong)) 0%,
+      rgb(255 255 255 / var(--factory-overlay-mid)) var(--factory-stop-strong),
+      rgb(255 255 255 / var(--factory-overlay-soft)) var(--factory-stop-mid),
+      rgb(255 255 255 / var(--factory-overlay-fade)) var(--factory-stop-soft),
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(0deg, rgb(255 255 255 / .58), rgb(255 255 255 / 0) 48%);
+}
+.factory-media[data-factory-side="right"] {
+  justify-content: flex-end;
+}
+.factory-media[data-factory-side="right"]::after {
+  background:
+    linear-gradient(
+      270deg,
+      rgb(255 255 255 / var(--factory-overlay-strong)) 0%,
+      rgb(255 255 255 / var(--factory-overlay-mid)) var(--factory-stop-strong),
+      rgb(255 255 255 / var(--factory-overlay-soft)) var(--factory-stop-mid),
+      rgb(255 255 255 / var(--factory-overlay-fade)) var(--factory-stop-soft),
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(0deg, rgb(255 255 255 / .58), rgb(255 255 255 / 0) 48%);
+}
+.factory-media-copy {
+  position: relative;
+  z-index: 1;
+  width: min(780px, var(--factory-copy-max));
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: var(--factory-text-align);
+  overflow: visible;
+}
+.factory-media-copy h2,
+.factory-media-copy p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.factory-media[data-factory-text-align="center"] .factory-media-note {
+  margin-inline: auto;
+}
+.factory-media[data-factory-text-align="right"] .factory-media-note {
+  margin-left: auto;
+}
+
+@media (max-width: 980px) {
+  .factory-media-copy {
+    width: min(760px, max(var(--factory-copy-max), 72%));
+  }
+}
+
+@media (max-width: 720px) {
+  .factory-media {
+    align-items: flex-end;
+    justify-content: flex-start !important;
+    min-height: min(var(--factory-height, 520px), 680px);
+  }
+  .factory-media::after,
+  .factory-media[data-factory-side="right"]::after {
+    background:
+      linear-gradient(
+        0deg,
+        rgb(255 255 255 / var(--factory-overlay-strong)) 0%,
+        rgb(255 255 255 / var(--factory-overlay-mid)) 42%,
+        rgb(255 255 255 / var(--factory-overlay-soft)) 72%,
+        rgb(255 255 255 / var(--factory-overlay-fade)) 100%
+      );
+  }
+  .factory-media-copy {
+    width: 100%;
+    padding: 34px 28px 38px;
+    text-align: left;
+  }
+  .factory-media-copy h2 {
+    line-height: 1.02;
+  }
+}
