@@ -53,11 +53,7 @@
   function money(value, currency = "USD") {
     if (value === null || value === undefined || value === "") return "";
     try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: currency || "USD",
-        maximumFractionDigits: 2,
-      }).format(Number(value));
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "USD", maximumFractionDigits: 2 }).format(Number(value));
     } catch {
       return `${currency || "USD"} ${Number(value).toLocaleString()}`;
     }
@@ -82,10 +78,7 @@
       ? product.variants.find((variant) => variant.is_default && variant.images?.length) || product.variants.find((variant) => variant.images?.length)
       : null;
     const image = defaultVariant?.images?.[0] || (Array.isArray(product?.images) && product.images.length ? product.images[0] : null);
-    return {
-      url: resolveImage(image?.image_url),
-      alt: image?.alt_text || product?.name || "Tin Tech product",
-    };
+    return { url: resolveImage(image?.image_url), alt: image?.alt_text || product?.name || "Tin Tech product" };
   }
 
   function productCard(product) {
@@ -131,6 +124,7 @@
     productCard,
     catalog: () => request("catalog", { cache: "default" }),
     siteSettings: () => request("site-settings", { cache: "default" }),
+    siteContent: () => request("site-content", { cache: "default" }),
     getProduct: (slug) => request("product", { query: { slug }, cache: "default" }),
     inquiry: (payload) => request("inquiry", { method: "POST", body: payload }),
     login: (password) => request("login", { method: "POST", body: { password } }),
@@ -138,4 +132,11 @@
     adminAction: (action, token, body = {}) => request(action, { method: "POST", token, body }),
     uploadImage,
   };
+
+  if (/\/admin\/?$/i.test(window.location.pathname)) {
+    const brandScript = document.createElement("script");
+    brandScript.src = new URL("admin-brand-v4.js", currentScript?.src || new URL("assets/js/", siteBase)).href;
+    brandScript.defer = true;
+    document.head.appendChild(brandScript);
+  }
 })();

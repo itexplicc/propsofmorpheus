@@ -1,6 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
   "use strict";
 
+  const cmsBundle = await (window.TinTechCMS?.ready || Promise.resolve({ content: window.TinTechContentDefaults || {} }));
+  const siteContent = cmsBundle.content || window.TinTechContentDefaults || {};
+  const productPage = siteContent.product_page || {};
+  const companyName = siteContent.brand?.company_name || "Tin Tech Packaging";
   const mount = document.querySelector("[data-product-detail]");
   if (!mount) return;
   const slug = new URLSearchParams(window.location.search).get("slug") || "";
@@ -82,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             ${specs(product).map(([key, value]) => `<div class="product-spec-row"><span>${TinTechAPI.escapeHTML(key)}</span><strong>${TinTechAPI.escapeHTML(value)}</strong></div>`).join("")}
           </div>
           <div class="product-actions-v3">
-            <a class="button button-primary" data-product-inquiry href="contact.html">Request project review →</a>
+            <a class="button button-primary" data-product-inquiry href="contact.html">${TinTechAPI.escapeHTML(productPage.request_label || "Request pricing & review")}</a>
             <a class="button button-ghost" href="portfolio.html">Back to portfolio</a>
           </div>
         </article>
@@ -151,7 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (note && activeVariant) note.textContent = `${groupLabel(activeVariant.variant_type)} selected: ${activeVariant.label}${activeVariant.value ? ` · ${activeVariant.value}` : ""}`;
     renderThumbnails();
     updateInquiry();
-    document.title = `${product.seo_title || product.name} | Tin Tech Packaging`;
+    document.title = `${product.seo_title || product.name} | ${companyName}`;
     const description = document.querySelector('meta[name="description"]');
     if (description && (product.seo_description || product.short_description)) description.content = product.seo_description || product.short_description;
   }
