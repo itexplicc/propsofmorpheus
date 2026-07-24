@@ -4,6 +4,32 @@
   const body = document.body;
   const toggle = document.querySelector("[data-nav-toggle]");
   const nav = document.querySelector("[data-site-nav]");
+  const scriptBase = document.currentScript ? new URL("./", document.currentScript.src) : new URL("assets/js/", window.location.href);
+
+  function loadStylesheet(id, href) {
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = new URL(href, scriptBase).href;
+    document.head.appendChild(link);
+  }
+
+  function loadScript(id, src) {
+    if (document.getElementById(id)) return;
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = new URL(src, scriptBase).href;
+    script.async = false;
+    document.head.appendChild(script);
+  }
+
+  loadStylesheet("tintech-site-v5", "../css/site-v5.css");
+  loadScript("tintech-factory-layout-v5", "factory-layout-v5.js");
+  if (new URLSearchParams(window.location.search).get("tintech_edit") === "1") {
+    loadStylesheet("tintech-live-editor-style", "../css/live-editor-v1.css");
+    loadScript("tintech-live-editor", "live-editor-v1.js");
+  }
 
   if (toggle && nav) {
     toggle.addEventListener("click", () => {
