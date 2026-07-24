@@ -1,0 +1,115 @@
+name: Tin Tech Integrity
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tin-tech-packaging/**'
+      - '.github/workflows/tin-tech-integrity.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tin-tech-packaging/**'
+      - '.github/workflows/tin-tech-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tin-tech-packaging/assets/js/api-v3.js
+          node --check tin-tech-packaging/assets/js/home-v3.js
+          node --check tin-tech-packaging/assets/js/product-v3.js
+          node --check tin-tech-packaging/assets/js/admin-v3.js
+          node --check tin-tech-packaging/assets/js/portfolio.js
+          node --check tin-tech-packaging/assets/js/site.js
+
+      - name: Validate Tin Tech pages and local references
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          root = Path('tin-tech-packaging')
+          pages = [
+              root / 'index.html',
+              root / 'portfolio.html',
+              root / 'product.html',
+              root / 'admin/index.html',
+          ]
+
+          class Inspector(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+                  self.refs = []
+                  self.base_href = None
+              def handle_starttag(self, tag, attrs):
+                  values = dict(attrs)
+                  if values.get('id'):
+                      self.ids.append(values['id'])
+                  if tag == 'base' and values.get('href'):
+                      self.base_href = values['href']
+                  for key in ('src', 'href'):
+                      if values.get(key):
+                          self.refs.append(values[key])
+
+          errors = []
+          for page in pages:
+              if not page.exists():
+                  errors.append(f'Missing page: {page}')
+                  continue
+              parser = Inspector()
+              parser.feed(page.read_text(encoding='utf-8'))
+              duplicates = sorted({item for item in parser.ids if parser.ids.count(item) > 1})
+              if duplicates:
+                  errors.append(f'{page}: duplicate IDs {duplicates}')
+
+              page_base = page.parent
+              if parser.base_href:
+                  page_base = (page.parent / parser.base_href).resolve()
+              for ref in parser.refs:
+                  parsed = urlparse(ref)
+                  if parsed.scheme or ref.startswith(('#', 'mailto:', 'tel:', 'data:', 'blob:', '//')):
+                      continue
+                  clean = parsed.path
+                  if not clean or clean.endswith('/'):
+                      continue
+                  target = (page_base / clean).resolve()
+                  try:
+                      target.relative_to(root.resolve())
+                  except ValueError:
+                      continue
+                  if not target.exists():
+                      errors.append(f'{page}: missing local reference {ref}')
+
+          required = {
+              root / 'index.html': ['data-managed-hero-image', 'data-managed-factory', 'home-v3.js'],
+              root / 'product.html': ['product-v3.js', 'data-product-detail'],
+              root / 'admin/index.html': ['data-admin-tab="appearance"', 'appearance-preview', 'variant-editor', 'admin-v3.js'],
+          }
+          for page, tokens in required.items():
+              text = page.read_text(encoding='utf-8')
+              for token in tokens:
+                  if token not in text:
+                      errors.append(f'{page}: required token missing: {token}')
+
+          if errors:
+              raise SystemExit('\n'.join(errors))
+          print('Tin Tech integrity checks passed.')
+          PY
