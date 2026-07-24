@@ -131,6 +131,7 @@
     productCard,
     catalog: () => request("catalog", { cache: "default" }),
     siteSettings: () => request("site-settings", { cache: "default" }),
+    siteContent: () => request("site-content", { cache: "default" }),
     getProduct: (slug) => request("product", { query: { slug }, cache: "default" }),
     inquiry: (payload) => request("inquiry", { method: "POST", body: payload }),
     login: (password) => request("login", { method: "POST", body: { password } }),
