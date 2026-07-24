@@ -10,6 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="./tin-tech-logo.svg">
   <link rel="stylesheet" href="./assets/css/admin.css">
   <link rel="stylesheet" href="./assets/css/admin-v3.css">
+  <link rel="stylesheet" href="./assets/css/admin-v4.css">
 </head>
 <body>
 <section class="admin-login" id="login-view">
@@ -19,7 +20,7 @@
     <p>Enter the shared admin password. No username is required.</p>
     <div class="login-field"><label for="admin-password">Admin password</label><input id="admin-password" type="password" required autocomplete="current-password"></div>
     <button class="login-button" type="submit">Open admin portal</button>
-    <p class="login-note">Sessions expire after 12 hours. Homepage, product and inquiry changes are stored in the Tin Tech backend.</p>
+    <p class="login-note">Sessions expire after 12 hours. Website, product and inquiry changes are stored in the Tin Tech backend.</p>
     <div class="login-status hidden" id="login-status" role="alert"></div>
   </form>
 </section>
@@ -35,16 +36,17 @@
     <aside class="admin-sidebar">
       <span class="sidebar-label">Manage</span>
       <button class="admin-tab active" type="button" data-admin-tab="overview">Overview</button>
-      <button class="admin-tab" type="button" data-admin-tab="appearance">Homepage appearance</button>
+      <button class="admin-tab" type="button" data-admin-tab="content">Website content</button>
+      <button class="admin-tab" type="button" data-admin-tab="appearance">Media & factory</button>
       <button class="admin-tab" type="button" data-admin-tab="products">Products</button>
       <button class="admin-tab" type="button" data-admin-tab="categories">Categories</button>
       <button class="admin-tab" type="button" data-admin-tab="inquiries">Inquiries <span class="count hidden" id="inquiry-tab-count">0</span></button>
-      <div class="sidebar-meta">Images upload immediately, but homepage changes become public only after you press Save appearance. Product edits become public when saved as Published.</div>
+      <div class="sidebar-meta">Website text and hero slides publish through Website content. Product changes publish when saved as Published. Uploaded media is stored securely in the Tin Tech backend.</div>
     </aside>
 
     <main class="admin-main">
       <section class="admin-view active" data-admin-view="overview">
-        <div class="admin-heading"><div><h1>Overview</h1><p>Homepage media, products, categories and commercial inquiries.</p></div><button class="admin-button primary" type="button" id="add-product-button">+ Add product</button></div>
+        <div class="admin-heading"><div><h1>Overview</h1><p>Website content, products, categories and commercial inquiries.</p></div><button class="admin-button primary" type="button" id="add-product-button">+ Add product</button></div>
         <div class="stat-grid">
           <article class="stat-card"><span>Total products</span><strong id="stat-products">0</strong><small>Published and draft items</small></article>
           <article class="stat-card"><span>Published</span><strong id="stat-published">0</strong><small>Visible in the public portfolio</small></article>
@@ -57,38 +59,32 @@
         </div>
       </section>
 
+      <section class="admin-view" data-admin-view="content">
+        <div class="admin-heading"><div><h1>Website content</h1><p>Edit the hero slideshow, logo, contact details, company information, capabilities, forms, numbers, calls to action, footer and SEO in one structured workspace.</p></div><button class="admin-button primary" id="cms-save-all" type="button">Publish website changes</button></div>
+        <div id="cms-editor-root"><div class="cms-loading">Open this section to load the current website content.</div></div>
+      </section>
+
       <section class="admin-view" data-admin-view="appearance">
-        <div class="admin-heading"><div><h1>Homepage appearance</h1><p>Change the hero image and factory story panel, then preview the real layout before publishing.</p></div><button class="admin-button primary" id="save-appearance-button" type="button">Save appearance</button></div>
+        <div class="admin-heading"><div><h1>Media & factory</h1><p>Manage the wide factory story image and its exact layout. The legacy hero fallback remains available if all slideshow slides are disabled.</p></div><button class="admin-button primary" id="save-appearance-button" type="button">Save media layout</button></div>
         <div class="appearance-layout">
           <div class="appearance-controls">
             <article class="appearance-card">
-              <h2>Hero image</h2><p>This is the main visual beside the opening message. Use a clean product, factory or team image with enough room around the subject.</p>
-              <div class="appearance-upload"><input id="hero-image-file" type="file" accept="image/*"><button class="admin-button outline" id="upload-hero-button" type="button">Upload hero</button></div>
+              <h2>Fallback hero image</h2><p>The hero slideshow is managed under Website content. This image is retained as a safe fallback if there is no active slideshow image.</p>
+              <div class="appearance-upload"><input id="hero-image-file" type="file" accept="image/*"><button class="admin-button outline" id="upload-hero-button" type="button">Upload fallback</button></div>
               <div class="media-current" id="hero-current-media"></div>
-              <div class="appearance-field-grid">
-                <div class="appearance-field full"><label for="hero-alt">Image description</label><input id="hero-alt" placeholder="Example: Tin Tech pouch caddies in multiple finishes"></div>
-                <div class="appearance-field full"><label for="hero-position">Image focus</label><select id="hero-position"></select></div>
-              </div>
+              <div class="appearance-field-grid"><div class="appearance-field full"><label for="hero-alt">Image description</label><input id="hero-alt" placeholder="Describe the fallback hero image"></div><div class="appearance-field full"><label for="hero-position">Image focus</label><select id="hero-position"></select></div></div>
             </article>
 
             <article class="appearance-card">
-              <h2>Factory story image</h2><p>This image fills the wide panel below the hero and overlaps the proof data. The white gradient is automatic so the text remains clear.</p>
+              <h2>Factory story image</h2><p>This image fills the wide panel beneath the slideshow and overlaps the proof data. The white readability gradient is automatic.</p>
               <div class="appearance-upload"><input id="factory-image-file" type="file" accept="image/*"><button class="admin-button outline" id="upload-factory-button" type="button">Upload factory</button></div>
               <div class="media-current" id="factory-current-media"></div>
-              <div class="appearance-field-grid">
-                <div class="appearance-field full"><label for="factory-alt">Image description</label><input id="factory-alt" placeholder="Example: Injection molding floor at the Sri Lanka facility"></div>
-                <div class="appearance-field"><label for="factory-position">Image focus</label><select id="factory-position"></select></div>
-                <div class="appearance-field"><label>Panel height</label><div class="height-control"><input id="factory-height-range" type="range" min="280" max="900" step="10"><input id="factory-height-number" type="number" min="280" max="900" step="10"></div></div>
-              </div>
+              <div class="appearance-field-grid"><div class="appearance-field full"><label for="factory-alt">Image description</label><input id="factory-alt" placeholder="Example: Injection molding floor at the Sri Lanka facility"></div><div class="appearance-field"><label for="factory-position">Image focus</label><select id="factory-position"></select></div><div class="appearance-field"><label>Panel height</label><div class="height-control"><input id="factory-height-range" type="range" min="280" max="900" step="10"><input id="factory-height-number" type="number" min="280" max="900" step="10"></div></div></div>
             </article>
 
-            <div class="appearance-savebar"><button class="admin-button dark" id="save-appearance-button-bottom" type="button" onclick="document.getElementById('save-appearance-button').click()">Save appearance</button></div>
+            <div class="appearance-savebar"><button class="admin-button dark" id="save-appearance-button-bottom" type="button" onclick="document.getElementById('save-appearance-button').click()">Save media layout</button></div>
           </div>
-
-          <aside class="appearance-preview-card">
-            <div class="preview-toolbar"><strong>Accurate homepage preview</strong><div class="preview-device-toggle"><button class="active" type="button" data-preview-device="desktop">Desktop</button><button type="button" data-preview-device="mobile">Mobile</button></div></div>
-            <div class="preview-frame-shell" id="preview-frame-shell"><iframe id="appearance-preview" title="Homepage appearance preview"></iframe></div>
-          </aside>
+          <aside class="appearance-preview-card"><div class="preview-toolbar"><strong>Homepage media preview</strong><div class="preview-device-toggle"><button class="active" type="button" data-preview-device="desktop">Desktop</button><button type="button" data-preview-device="mobile">Mobile</button></div></div><div class="preview-frame-shell" id="preview-frame-shell"><iframe id="appearance-preview" title="Homepage media preview"></iframe></div></aside>
         </div>
       </section>
 
@@ -116,57 +112,24 @@
     <div class="modal-head"><h2 id="product-modal-title">Add product</h2><button class="modal-close" type="button" data-close-modal aria-label="Close">×</button></div>
     <div class="modal-body">
       <input id="product-id" type="hidden">
-      <section class="editor-section"><h3>Basic information</h3><div class="editor-grid">
-        <div class="editor-field"><label for="product-name">Product name</label><input id="product-name" required></div>
-        <div class="editor-field"><label for="product-slug">URL slug</label><input id="product-slug" placeholder="Created automatically if blank"></div>
-        <div class="editor-field"><label for="product-sku">SKU / reference</label><input id="product-sku"></div>
-        <div class="editor-field"><label for="product-category">Category</label><select id="product-category"></select></div>
-        <div class="editor-field full"><label for="product-short">Short description</label><textarea id="product-short" style="min-height:80px"></textarea></div>
-        <div class="editor-field full"><label for="product-description">Full description</label><textarea id="product-description"></textarea></div>
-      </div></section>
-
-      <section class="editor-section"><h3>Commercial information</h3><div class="editor-grid">
-        <div class="editor-field"><label for="product-price-min">Price minimum</label><input id="product-price-min" type="number" step="0.01"></div>
-        <div class="editor-field"><label for="product-price-max">Price maximum</label><input id="product-price-max" type="number" step="0.01"></div>
-        <div class="editor-field"><label for="product-currency">Currency</label><select id="product-currency"><option>USD</option><option>EUR</option><option>GBP</option><option>LKR</option></select></div>
-        <div class="editor-field"><label for="product-price-unit">Price unit</label><input id="product-price-unit" placeholder="per piece, per set, etc."></div>
-        <div class="editor-field full"><label for="product-price-note">Price note / quote guidance</label><input id="product-price-note" placeholder="Shown when no numeric range is available"></div>
-        <div class="editor-field"><label for="product-moq">MOQ</label><input id="product-moq" placeholder="Example: 10,000 pieces"></div>
-        <div class="editor-field"><label for="product-lead-time">Lead time</label><input id="product-lead-time"></div>
-      </div></section>
-
-      <section class="editor-section"><h3>Technical information</h3><div class="editor-grid">
-        <div class="editor-field"><label for="product-dimensions">Dimensions</label><input id="product-dimensions"></div>
-        <div class="editor-field"><label for="product-material">Material</label><input id="product-material"></div>
-        <div class="editor-field full"><label for="product-tags">Tags</label><input id="product-tags" placeholder="Comma-separated"></div>
-      </div><div class="spec-editor" id="spec-editor" style="margin-top:14px"></div><button class="admin-button outline" id="add-spec-button" type="button" style="margin-top:10px">+ Add specification</button></section>
-
+      <section class="editor-section"><h3>Basic information</h3><div class="editor-grid"><div class="editor-field"><label for="product-name">Product name</label><input id="product-name" required></div><div class="editor-field"><label for="product-slug">URL slug</label><input id="product-slug" placeholder="Created automatically if blank"></div><div class="editor-field"><label for="product-sku">SKU / reference</label><input id="product-sku"></div><div class="editor-field"><label for="product-category">Category</label><select id="product-category"></select></div><div class="editor-field full"><label for="product-short">Short description</label><textarea id="product-short" style="min-height:80px"></textarea></div><div class="editor-field full"><label for="product-description">Full description</label><textarea id="product-description"></textarea></div></div></section>
+      <section class="editor-section"><h3>Commercial information</h3><div class="editor-grid"><div class="editor-field"><label for="product-price-min">Price minimum</label><input id="product-price-min" type="number" step="0.01"></div><div class="editor-field"><label for="product-price-max">Price maximum</label><input id="product-price-max" type="number" step="0.01"></div><div class="editor-field"><label for="product-currency">Currency</label><select id="product-currency"><option>USD</option><option>EUR</option><option>GBP</option><option>LKR</option></select></div><div class="editor-field"><label for="product-price-unit">Price unit</label><input id="product-price-unit" placeholder="per piece, per set, etc."></div><div class="editor-field full"><label for="product-price-note">Price note / quote guidance</label><input id="product-price-note" placeholder="Shown when no numeric range is available"></div><div class="editor-field"><label for="product-moq">MOQ</label><input id="product-moq" placeholder="Example: 10,000 pieces"></div><div class="editor-field"><label for="product-lead-time">Lead time</label><input id="product-lead-time"></div></div></section>
+      <section class="editor-section"><h3>Technical information</h3><div class="editor-grid"><div class="editor-field"><label for="product-dimensions">Dimensions</label><input id="product-dimensions"></div><div class="editor-field"><label for="product-material">Material</label><input id="product-material"></div><div class="editor-field full"><label for="product-tags">Tags</label><input id="product-tags" placeholder="Comma-separated"></div></div><div class="spec-editor" id="spec-editor" style="margin-top:14px"></div><button class="admin-button outline" id="add-spec-button" type="button" style="margin-top:10px">+ Add specification</button></section>
       <section class="editor-section"><h3>General product gallery</h3><p style="color:#687d8e;font-size:.75rem;margin-top:-5px">Upload several general angles or detail images. Option-specific galleries below take priority when a buyer selects a color or print.</p><div class="upload-row"><input id="product-image-file" type="file" accept="image/*" multiple><button class="admin-button outline" id="upload-image-button" type="button">Upload images</button><span style="color:#667789;font-size:.72rem">Multiple JPG, PNG, WebP, GIF or SVG · 8 MB each</span></div><div class="image-manager" id="image-manager"></div></section>
-
       <section class="editor-section"><div style="display:flex;justify-content:space-between;gap:16px;align-items:center"><div><h3 style="margin-bottom:4px">Selectable product options</h3><p style="color:#687d8e;font-size:.75rem;margin:0">Create Color, Print, Finish or Style choices. Each choice can display its own swatch and multiple images.</p></div><button class="admin-button primary" id="add-variant-button" type="button">+ Add option</button></div><div class="variant-editor" id="variant-editor"></div></section>
-
-      <section class="editor-section"><h3>Publishing & SEO</h3><div class="editor-grid">
-        <div class="editor-field"><label for="product-sort">Sort order</label><input id="product-sort" type="number" step="1"></div>
-        <div class="editor-field"><label for="product-seo-title">SEO title</label><input id="product-seo-title"></div>
-        <div class="editor-field full"><label for="product-seo-description">SEO description</label><textarea id="product-seo-description" style="min-height:80px"></textarea></div>
-        <div class="editor-field full"><div class="editor-checks"><label class="editor-check"><input id="product-published" type="checkbox"> Published in portfolio</label><label class="editor-check"><input id="product-featured" type="checkbox"> Featured on home page</label></div></div>
-      </div></section>
+      <section class="editor-section"><h3>Publishing & SEO</h3><div class="editor-grid"><div class="editor-field"><label for="product-sort">Sort order</label><input id="product-sort" type="number" step="1"></div><div class="editor-field"><label for="product-seo-title">SEO title</label><input id="product-seo-title"></div><div class="editor-field full"><label for="product-seo-description">SEO description</label><textarea id="product-seo-description" style="min-height:80px"></textarea></div><div class="editor-field full"><div class="editor-checks"><label class="editor-check"><input id="product-published" type="checkbox"> Published in portfolio</label><label class="editor-check"><input id="product-featured" type="checkbox"> Featured on home page</label></div></div></div></section>
     </div>
     <div class="modal-footer"><button class="admin-button outline" type="button" data-close-modal>Cancel</button><button class="admin-button dark" id="save-product" type="submit">Save product</button></div>
   </form>
 </div>
 
-<div class="admin-modal hidden" id="category-modal" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
-  <form class="modal-panel" id="category-form" style="width:min(600px,100%)">
-    <div class="modal-head"><h2 id="category-modal-title">Add category</h2><button class="modal-close" type="button" data-close-modal aria-label="Close">×</button></div>
-    <div class="modal-body"><input id="category-id" type="hidden"><div class="editor-grid"><div class="editor-field"><label for="category-name">Category name</label><input id="category-name" required></div><div class="editor-field"><label for="category-slug">URL slug</label><input id="category-slug" placeholder="Created from name if blank"></div><div class="editor-field full"><label for="category-description">Description</label><textarea id="category-description"></textarea></div><div class="editor-field"><label for="category-sort">Sort order</label><input id="category-sort" type="number"></div><div class="editor-field"><label class="editor-check" style="margin-top:20px"><input id="category-active" type="checkbox"> Active in public filters</label></div></div></div>
-    <div class="modal-footer"><button class="admin-button outline" type="button" data-close-modal>Cancel</button><button class="admin-button dark" id="save-category" type="submit">Save category</button></div>
-  </form>
-</div>
+<div class="admin-modal hidden" id="category-modal" role="dialog" aria-modal="true" aria-labelledby="category-modal-title"><form class="modal-panel" id="category-form" style="width:min(600px,100%)"><div class="modal-head"><h2 id="category-modal-title">Add category</h2><button class="modal-close" type="button" data-close-modal aria-label="Close">×</button></div><div class="modal-body"><input id="category-id" type="hidden"><div class="editor-grid"><div class="editor-field"><label for="category-name">Category name</label><input id="category-name" required></div><div class="editor-field"><label for="category-slug">URL slug</label><input id="category-slug" placeholder="Created from name if blank"></div><div class="editor-field full"><label for="category-description">Description</label><textarea id="category-description"></textarea></div><div class="editor-field"><label for="category-sort">Sort order</label><input id="category-sort" type="number"></div><div class="editor-field"><label class="editor-check" style="margin-top:20px"><input id="category-active" type="checkbox"> Active in public filters</label></div></div></div><div class="modal-footer"><button class="admin-button outline" type="button" data-close-modal>Cancel</button><button class="admin-button dark" id="save-category" type="submit">Save category</button></div></form></div>
 
 <div class="loading-cover hidden" id="loading-cover"><div class="spinner" aria-label="Loading"></div></div>
 <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+<script defer src="./assets/js/content-defaults-v4.js"></script>
 <script defer src="./assets/js/api-v3.js"></script>
 <script defer src="./assets/js/admin-v3.js"></script>
+<script defer src="./assets/js/cms-admin-v4.js"></script>
 </body>
 </html>
