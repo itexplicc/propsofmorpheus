@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Hi-Line Auto Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-body">
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="brand"><span class="brand-mark">HL</span><span>HI-LINE AUTO<small>ADMIN PORTAL</small></span></div>
+      <h1>Enter password</h1>
+      <p>That is all. No username and no complicated login.</p>
+      <input class="field password-field" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required autofocus>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Open admin portal</button>
+      <div class="help" style="text-align:center;margin-top:14px">For Hi-Line Auto staff only</div>
+    </form>
+  </section>
+
+  <div class="admin-app hidden" id="adminApp">
+    <aside class="admin-side">
+      <a class="brand" href="./" target="_blank"><span class="brand-mark">HL</span><span>HI-LINE AUTO<small>ADMIN PORTAL</small></span></a>
+      <nav class="admin-menu" id="desktopMenu">
+        <button class="active" data-section="dashboard">▦ Dashboard</button>
+        <button data-section="vehicles">🚘 Vehicles</button>
+        <button data-section="leads">☎ Enquiries</button>
+        <button data-section="investors">◉ Investors</button>
+        <button data-section="settings">⚙ Settings</button>
+      </nav>
+      <div class="bottom">
+        <a class="btn btn-light btn-block" href="./" target="_blank">Open website ↗</a>
+        <button class="btn btn-danger btn-block" id="logoutButton" style="margin-top:8px">Log out</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <div id="adminContent"></div>
+    </main>
+
+    <nav class="mobile-admin-nav" id="mobileMenu">
+      <button class="active" data-section="dashboard">▦<br>Home</button>
+      <button data-section="vehicles">🚘<br>Vehicles</button>
+      <button data-section="leads">☎<br>Leads</button>
+      <button data-section="investors">◉<br>Investors</button>
+      <button data-section="settings">⚙<br>Settings</button>
+    </nav>
+  </div>
+
+  <section class="editor-overlay hidden" id="editorOverlay">
+    <div class="editor">
+      <header class="editor-head">
+        <div><div class="vehicle-ref" id="editorRef">NEW VEHICLE</div><h2 id="editorTitle">Add a vehicle</h2></div>
+        <button class="icon-btn" type="button" id="closeEditor" aria-label="Close">✕</button>
+      </header>
+      <nav class="editor-tabs" id="editorTabs">
+        <button class="active" data-tab="basics">1. Vehicle</button>
+        <button data-tab="media">2. Photos & videos</button>
+        <button data-tab="costs">3. Costs</button>
+        <button data-tab="investment">4. Investment</button>
+        <button data-tab="sale">5. Sale & profit</button>
+        <button data-tab="vehicleLeads">6. Enquiries</button>
+      </nav>
+      <div class="editor-body" id="editorBody">
+        <section class="tab-pane active" data-pane="basics" id="basicsPane"></section>
+        <section class="tab-pane" data-pane="media" id="mediaPane"></section>
+        <section class="tab-pane" data-pane="costs" id="costsPane"></section>
+        <section class="tab-pane" data-pane="investment" id="investmentPane"></section>
+        <section class="tab-pane" data-pane="sale" id="salePane"></section>
+        <section class="tab-pane" data-pane="vehicleLeads" id="vehicleLeadsPane"></section>
+      </div>
+    </div>
+  </section>
+
+  <div id="toastRoot"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.3/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
