@@ -1,35 +1,55 @@
 # Hi-Line Auto Sales & Investment System
 
-A simple vehicle showroom and admin portal built for Sri Lankan vehicle trading.
+A simple, mobile-first vehicle showroom and admin portal for Sri Lankan vehicle trading, local buying and selling, and imports.
+
+## Live links
+
+- Public website: https://itexplicc.github.io/propsofmorpheus/hi-line-auto/
+- Admin portal: https://itexplicc.github.io/propsofmorpheus/hi-line-auto/admin.html
+- Admin login: password only; no username
 
 ## Public website
-- Browse all published vehicles
-- Search and filter by type, make and status
-- Share a direct link to one vehicle
+
+- Browse published vehicles of any type
+- Search and filter by type, make and availability
+- Open and share a direct vehicle link
 - Multiple photos and videos
-- Call, WhatsApp, enquiry, test-drive and offer actions
-- Sold vehicles remain visible for a chosen number of days
+- Call, WhatsApp, enquiry, inspection and offer actions
+- Sold vehicles remain visible for a selected number of days
 
-## Admin portal
-Password-only login. Default password: `Caradmin`
+## Simple admin workflow
 
-- Add and edit any vehicle type
-- Reuse saved make/model/variant values
-- Upload multiple photos and videos
-- Track enquiries, offers and negotiation stages
-- Record purchase price and every additional cost
-- Attach invoices and receipts
-- Record investor contributions per vehicle
-- Record final sale price
-- Automatically calculate total cost, profit, investment percentage, profit share and payout
-- Control statuses: bought, importing, repair, ready, displayed, reserved, in use, sold and archived
+1. Add or open a vehicle.
+2. Save its details and selling price.
+3. Upload photos and videos.
+4. Add costs and attach invoices.
+5. Add investors and their amounts.
+6. Follow enquiries and offers.
+7. Mark the vehicle sold and review automatic profit sharing.
 
-## Architecture
-- Static responsive frontend suitable for GitHub Pages
-- Supabase Edge Function as the only data API
-- PostgreSQL with RLS enabled and direct browser access revoked
-- Public Storage bucket for vehicle media
-- Private Storage bucket for invoices
-- Custom expiring admin sessions with login rate limiting
+## Financial system
 
-All database objects use the `hla_` prefix to stay isolated from other systems in the Supabase project.
+For every vehicle, the system records:
+
+- purchase price
+- repairs, service, detailing, marketing, transport, duties, commissions and other costs
+- private invoice and receipt files
+- investor contributions
+- total cost and funding balance
+- final selling price and deductions
+- net profit
+- each investor's percentage, capital return, profit share and total payout
+
+## Architecture and security
+
+- Static responsive frontend published through GitHub Pages
+- Dedicated Supabase project: `Car-business`
+- Secured `hiline-api` Edge Function for public and admin operations
+- PostgreSQL tables with Row Level Security
+- Direct browser access blocked for costs, investors, invoices, sales, enquiries and admin sessions
+- Public storage for vehicle media and private storage for invoices
+- Password checked only on the server
+- Expiring hashed admin sessions
+- Login and enquiry rate limiting
+
+The Hi-Line Auto files are isolated under this folder and the Pages workflow copies them into a separate `/hi-line-auto/` website path without changing the Tin Tech or MAKO sites.
