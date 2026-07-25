@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="description" content="Browse quality vehicles from Hi-Line Auto Sri Lanka. Local buying, selling and imports with complete details, photos and direct enquiries.">
+  <title>Hi-Line Auto | Vehicles in Sri Lanka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./" aria-label="Hi-Line Auto home">
+        <span class="brand-mark">HL</span>
+        <span class="brand-text">HI-LINE AUTO<small>BUY · SELL · IMPORT</small></span>
+      </a>
+      <div class="nav-actions">
+        <a class="btn btn-light desktop-only" href="#vehicles">Browse vehicles</a>
+        <a class="btn btn-primary" id="headerWhatsApp" href="#">WhatsApp</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="mainPage">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <span class="eyebrow">Sri Lankan vehicle trading</span>
+          <h1>See every detail.<br>Choose with confidence.</h1>
+          <p>Cars, SUVs, vans, bikes and more — clearly presented with full specifications, multiple photos, videos and a direct line to the Hi-Line Auto sales team.</p>
+        </div>
+        <div class="hero-card">
+          <strong id="heroCount">—</strong>
+          <span>vehicles currently available to browse</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="shell search-wrap">
+      <div class="search-panel" aria-label="Vehicle filters">
+        <input class="field search-wide" id="searchInput" type="search" placeholder="Search Toyota, SUV, hybrid, year...">
+        <select class="select-field" id="typeFilter"><option value="">All vehicle types</option></select>
+        <select class="select-field" id="makeFilter"><option value="">All makes</option></select>
+        <select class="select-field" id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="sold">Sold</option>
+        </select>
+        <button class="btn btn-dark" id="clearFilters" type="button">Clear</button>
+      </div>
+    </div>
+
+    <section class="section" id="vehicles">
+      <div class="shell">
+        <div class="section-head">
+          <div><h2>Vehicles</h2><p>Open any vehicle to view its complete listing and send an enquiry or offer.</p></div>
+          <span class="count-pill" id="resultCount">Loading…</span>
+        </div>
+        <div class="vehicle-grid" id="vehicleGrid" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <section class="detail-overlay hidden" id="detailOverlay" aria-hidden="true">
+    <div class="detail-bar">
+      <div class="shell">
+        <button class="btn btn-light" type="button" id="backButton">← All vehicles</button>
+        <div class="inline-actions">
+          <button class="icon-btn" type="button" id="shareButton" aria-label="Share this vehicle">↗</button>
+          <a class="btn btn-primary" id="detailWhatsApp" href="#">WhatsApp sales</a>
+        </div>
+      </div>
+    </div>
+    <div class="shell detail-layout" id="detailContent"></div>
+  </section>
+
+  <footer class="footer">
+    <div class="shell footer-inner">
+      <div>
+        <div class="brand"><span class="brand-mark">HL</span><span>HI-LINE AUTO<small>BUY · SELL · IMPORT</small></span></div>
+        <p>Quality vehicles. Clear information. Straightforward deals.</p>
+      </div>
+      <div class="inline-actions">
+        <a class="btn btn-light" id="footerCall" href="#">Call sales</a>
+        <a class="btn btn-primary" id="footerWhatsApp" href="#">WhatsApp</a>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toastRoot"></div>
+  <script src="config.js"></script>
+  <script src="public.js"></script>
+</body>
+</html>
