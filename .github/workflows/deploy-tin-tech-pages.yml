@@ -9,6 +9,7 @@ on:
       - 'mako-site-source/**'
       - 'hi-line-auto/**'
       - 'qaj-young-hearts/**'
+      - 'apex-rubber/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -46,6 +47,7 @@ jobs:
           mkdir -p _site/nautical-naturals
           mkdir -p _site/hi-line-auto
           mkdir -p _site/qaj-young-hearts
+          mkdir -p _site/apex-rubber
 
           cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
           cp tin-tech-packaging/about.html _site/tin-tech-packaging/about.html
@@ -96,6 +98,9 @@ jobs:
           test -f _site/qaj-young-hearts/assets/style-loader.js
           grep -q 'Quranic Arabic for Young Hearts' _site/qaj-young-hearts/index.html
           grep -q 'zadxvmpgngwtpsmdkcod.supabase.co' _site/qaj-young-hearts/assets/config.js
+
+          cp -R apex-rubber/. _site/apex-rubber/
+          test -f _site/apex-rubber/remaining-75k/index.html
 
           touch _site/.nojekyll
 
