@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Reassemble and validate JavaScript
         shell: bash
         run: |
+          set -euo pipefail
           cat qaj-young-hearts/assets/app.*.part > /tmp/qaj-app.js
           cat qaj-young-hearts/assets/admin.*.part > /tmp/qaj-admin.js
           node --check /tmp/qaj-app.js
@@ -25,9 +27,12 @@ jobs:
           node --check qaj-young-hearts/assets/app-loader.js
           node --check qaj-young-hearts/assets/admin-loader.js
           node --check qaj-young-hearts/assets/style-loader.js
-      - name: Validate HTML and required files
+
+      - name: Validate HTML and release assets
         shell: bash
         run: |
+          set -euo pipefail
+
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
@@ -36,41 +41,52 @@ jobs:
               pass
 
           for name in ('index.html', 'admin.html'):
-              text = Path('qaj-young-hearts', name).read_text(encoding='utf-8')
+              path = Path('qaj-young-hearts', name)
+              text = path.read_text(encoding='utf-8')
               Parser().feed(text)
-              assert '<!doctype html>' in text.lower()
-
-          required = [
-              'qaj-young-hearts/assets/config.js',
-              'qaj-young-hearts/assets/styles.1.part',
-              'qaj-young-hearts/assets/styles.4.part',
-              'qaj-young-hearts/assets/app.1.part',
-              'qaj-young-hearts/assets/app.3.part',
-              'qaj-young-hearts/assets/admin.1.part',
-              'qaj-young-hearts/assets/admin.3.part',
-              'qaj-young-hearts/qaj-book-cover.webp',
-              'qaj-young-hearts/assets/icons/favicon.svg',
-              'qaj-young-hearts/assets/icons/favicon-32.png',
-              'qaj-young-hearts/assets/icons/apple-touch-icon.png',
-              'qaj-young-hearts/assets/icons/icon-192.png',
-              'qaj-young-hearts/site.webmanifest',
-          ]
-          for path in required:
-              item = Path(path)
-              assert item.is_file(), path
-              assert item.stat().st_size > 0, f'{path} is empty'
-
-          cover = Path('qaj-young-hearts/qaj-book-cover.webp')
-          assert cover.stat().st_size > 20_000, 'Official cover binary is suspiciously small or missing'
-          assert cover.read_bytes()[:4] == b'RIFF', 'Official cover is not a valid WebP container'
-
-          for icon_path in (
-              'qaj-young-hearts/assets/icons/favicon-32.png',
-              'qaj-young-hearts/assets/icons/apple-touch-icon.png',
-              'qaj-young-hearts/assets/icons/icon-192.png',
-          ):
-              icon = Path(icon_path)
-              assert icon.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', f'{icon_path} is not a valid PNG'
-
-          print('QAJ Young Hearts release validated')
+              if '<!doctype html>' not in text.lower():
+                  raise SystemExit(f'{path} is not a complete HTML document')
           PY
+
+          required=(
+            qaj-young-hearts/assets/config.js
+            qaj-young-hearts/assets/styles.1.part
+            qaj-young-hearts/assets/styles.4.part
+            qaj-young-hearts/assets/app.1.part
+            qaj-young-hearts/assets/app.3.part
+            qaj-young-hearts/assets/admin.1.part
+            qaj-young-hearts/assets/admin.3.part
+            qaj-young-hearts/qaj-book-cover.webp
+            qaj-young-hearts/assets/icons/favicon.svg
+            qaj-young-hearts/assets/icons/favicon-32.png
+            qaj-young-hearts/assets/icons/apple-touch-icon.png
+            qaj-young-hearts/assets/icons/icon-192.png
+            qaj-young-hearts/site.webmanifest
+          )
+
+          for path in "${required[@]}"; do
+            test -s "$path" || { echo "Missing or empty release file: $path" >&2; exit 1; }
+          done
+
+          test "$(head -c 4 qaj-young-hearts/qaj-book-cover.webp)" = "RIFF" || {
+            echo 'Official cover is not a WebP RIFF container' >&2
+            exit 1
+          }
+
+          test "$(stat -c%s qaj-young-hearts/qaj-book-cover.webp)" -gt 20000 || {
+            echo 'Official cover file is suspiciously small' >&2
+            exit 1
+          }
+
+          for icon in \
+            qaj-young-hearts/assets/icons/favicon-32.png \
+            qaj-young-hearts/assets/icons/apple-touch-icon.png \
+            qaj-young-hearts/assets/icons/icon-192.png; do
+            signature="$(od -An -tx1 -N8 "$icon" | tr -d ' \n')"
+            test "$signature" = "89504e470d0a1a0a" || {
+              echo "Invalid PNG signature: $icon" >&2
+              exit 1
+            }
+          done
+
+          echo 'QAJ Young Hearts release validated'
