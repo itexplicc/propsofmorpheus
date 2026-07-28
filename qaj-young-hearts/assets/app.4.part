@@ -1,0 +1,42 @@
+
+(() => {
+  "use strict";
+  const cfg = window.QAJ_CONFIG || {};
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  function applyCardScale(rawValue) {
+    const percent = clamp(Number(rawValue) || 78, 74, 115);
+    const scale = percent / 100;
+    const root = document.documentElement;
+    root.style.setProperty("--qaj-card-scale", String(scale));
+    root.style.setProperty("--qaj-card-height", `${Math.round(264 * scale)}px`);
+    root.style.setProperty("--qaj-card-min-width", `${Math.round(230 * scale)}px`);
+    root.style.setProperty("--qaj-card-letter-size", `${Math.round(92 * scale)}px`);
+    root.style.setProperty("--qaj-card-word-size", `${Math.round(28 * scale)}px`);
+    root.style.setProperty("--qaj-card-padding", `${Math.max(10, Math.round(18 * scale))}px`);
+    root.dataset.qajCardScale = String(percent);
+  }
+
+  applyCardScale(78);
+
+  async function loadCardScale() {
+    if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+    try {
+      const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+        auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+      });
+      const { data, error } = await client
+        .from("qaj_yh_site_settings")
+        .select("value")
+        .eq("key", "card_scale")
+        .eq("is_public", true)
+        .maybeSingle();
+      if (error) throw error;
+      applyCardScale(data?.value);
+    } catch (error) {
+      console.warn("Could not load the saved Young Hearts card size.", error);
+    }
+  }
+
+  loadCardScale();
+})();
