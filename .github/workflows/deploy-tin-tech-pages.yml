@@ -88,31 +88,12 @@ jobs:
           grep -q 'gxxfxsvviigzwtkgiduv' _site/hi-line-auto/config.js
 
           cp -R qaj-young-hearts/. _site/qaj-young-hearts/
-
-          # Reconstruct the supplied official book cover from text-safe chunks.
-          # This prevents binary corruption in repository automation while keeping
-          # the final public asset as a normal optimized WebP file.
-          shopt -s nullglob
-          cover_chunks=(qaj-young-hearts/assets/cover/qaj-book-cover.b64.*)
-          test "${#cover_chunks[@]}" -eq 6 || {
-            echo "Expected 6 official-cover chunks, found ${#cover_chunks[@]}" >&2
-            exit 1
-          }
-          cat "${cover_chunks[@]}" \
-            | tr -d '\r\n ' \
-            | base64 --decode \
-            > _site/qaj-young-hearts/qaj-book-cover.webp
-          rm -rf _site/qaj-young-hearts/assets/cover
-
           test -f _site/qaj-young-hearts/index.html
           test -f _site/qaj-young-hearts/admin.html
           test -f _site/qaj-young-hearts/assets/config.js
           test -f _site/qaj-young-hearts/assets/app-loader.js
           test -f _site/qaj-young-hearts/assets/admin-loader.js
           test -f _site/qaj-young-hearts/assets/style-loader.js
-          test -s _site/qaj-young-hearts/qaj-book-cover.webp
-          test "$(head -c 4 _site/qaj-young-hearts/qaj-book-cover.webp)" = 'RIFF'
-          test "$(stat -c%s _site/qaj-young-hearts/qaj-book-cover.webp)" -eq 43556
           grep -q 'Quranic Arabic for Young Hearts' _site/qaj-young-hearts/index.html
           grep -q 'zadxvmpgngwtpsmdkcod.supabase.co' _site/qaj-young-hearts/assets/config.js
 
