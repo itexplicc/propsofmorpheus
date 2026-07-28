@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b5b58">
+  <meta name="description" content="Quranic Arabic for Young Hearts — a playful, guided Arabic learning experience for children and families.">
+  <title>Quranic Arabic for Young Hearts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>html:not(.qaj-styled) body{opacity:0}body{transition:opacity .18s ease}</style>
+  <script src="assets/style-loader.js"></script>
+</head>
+<body class="public-page">
+  <a class="skip-link" href="#letterGrid">Skip to letters</a>
+
+  <div class="ambient" aria-hidden="true">
+    <span class="orb orb-a"></span><span class="orb orb-b"></span><span class="orb orb-c"></span>
+    <span class="star s1">✦</span><span class="star s2">✦</span><span class="star s3">✦</span>
+  </div>
+
+  <header class="site-header shell">
+    <a class="brand" href="#top" aria-label="Quranic Arabic for Young Hearts home">
+      <span class="brand-mark" lang="ar" dir="rtl">ق</span>
+      <span><strong>Young Hearts</strong><small>Quranic Arabic</small></span>
+    </a>
+    <nav class="header-actions" aria-label="Primary">
+      <button class="soft-button" id="continueBtn" type="button" hidden>
+        <span aria-hidden="true">↗</span> Continue
+      </button>
+      <a class="icon-button" href="admin.html" aria-label="Open educator studio" title="Educator studio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 8 12 13l7-3.8V15h2V8L12 3Zm-6 9.1V17l6 3 6-3v-4.9L12 15l-6-2.9Z"/></svg>
+      </a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero shell" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <span class="eyebrow"><i></i> Read • Feel • Remember</span>
+        <h1 id="heroTitle">Quranic Arabic<br><em>for Young Hearts</em></h1>
+        <p id="heroSubtitle">Discover every Arabic letter through meaningful Qur’anic words, stories, crafts, duas, and shared family experiences.</p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#explore">Begin the journey <span aria-hidden="true">→</span></a>
+          <button class="ghost-button" id="randomWordBtn" type="button"><span aria-hidden="true">✦</span> Surprise me</button>
+        </div>
+        <div class="hero-meta" aria-label="Book highlights">
+          <div><strong>27</strong><span>Arabic letters</span></div>
+          <div><strong>54</strong><span>Qur’anic words</span></div>
+          <div><strong>∞</strong><span>Beautiful moments</span></div>
+        </div>
+      </div>
+
+      <div class="hero-stage" aria-label="Featured book experience">
+        <div class="book-halo"></div>
+        <div class="book-card">
+          <div class="book-pattern" aria-hidden="true"></div>
+          <span class="book-kicker">A journey from ا to ي</span>
+          <div class="book-letter" lang="ar" dir="rtl">ق</div>
+          <h2>Words that enter<br>the heart</h2>
+          <p>Learn the language of the Qur’an through play, wonder, and love.</p>
+          <div class="book-ribbon">QAJ Education</div>
+        </div>
+        <div class="progress-card" id="progressCard">
+          <div class="progress-ring" id="progressRing" style="--progress:0">
+            <span id="progressPercent">0%</span>
+          </div>
+          <div><strong>Your journey</strong><small id="progressText">Open your first word</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="song-section shell" id="songSection" hidden aria-labelledby="songHeading">
+      <div class="song-card">
+        <div class="song-art" aria-hidden="true"><span>♫</span></div>
+        <div class="song-copy">
+          <span class="eyebrow light"><i></i> Book song</span>
+          <h2 id="songHeading">Listen, sing, remember</h2>
+          <p id="songDescription">A special song for this learning journey.</p>
+        </div>
+        <div class="audio-player" id="audioPlayer">
+          <button class="audio-play" id="audioPlayBtn" type="button" aria-label="Play book song">
+            <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7V5Zm6 0h4v14h-4V5Z"/></svg>
+          </button>
+          <div class="audio-track">
+            <div class="audio-title-row"><strong id="audioTitle">Young Hearts Song</strong><span id="audioTime">0:00</span></div>
+            <input id="audioSeek" class="seek" type="range" min="0" max="100" value="0" aria-label="Song position">
+          </div>
+          <audio id="bookAudio" preload="metadata"></audio>
+        </div>
+      </div>
+    </section>
+
+    <section class="explore-section shell" id="explore" aria-labelledby="exploreHeading">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow"><i></i> The Arabic alphabet</span>
+          <h2 id="exploreHeading">Choose a letter.<br><em>Open a world.</em></h2>
+        </div>
+        <p>Every card carries two Qur’anic words and a complete guided experience for teachers, parents, and young learners.</p>
+      </div>
+
+      <div class="explorer-toolbar" role="search">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+          <span class="sr-only">Search Arabic words or English meanings</span>
+          <input id="wordSearch" type="search" placeholder="Search a word, meaning, or letter…" autocomplete="off">
+        </label>
+        <div class="toolbar-status" aria-live="polite"><span id="resultCount">27 letters</span></div>
+        <button class="soft-button reset-button" id="resetSearch" type="button" hidden>Clear search</button>
+      </div>
+
+      <div class="letter-grid" id="letterGrid" aria-label="Arabic letter cards" aria-busy="true">
+        <div class="loading-card"></div><div class="loading-card"></div><div class="loading-card"></div><div class="loading-card"></div>
+      </div>
+      <div class="empty-state" id="emptyState" hidden>
+        <span lang="ar" dir="rtl">؟</span><h3>No matching word yet</h3><p>Try another Arabic letter or an English meaning.</p>
+      </div>
+    </section>
+
+    <section class="method-section shell" aria-labelledby="methodHeading">
+      <div class="method-card">
+        <div class="method-intro">
+          <span class="eyebrow light"><i></i> One word, one memory</span>
+          <h2 id="methodHeading">Not a vocabulary list.<br>A childhood experience.</h2>
+          <p>Each word becomes something a child can see, touch, say, remember, and connect back to Allah.</p>
+        </div>
+        <ol class="method-steps">
+          <li><span>01</span><div><strong>Discover</strong><small>Meet the letter and its Qur’anic word.</small></div></li>
+          <li><span>02</span><div><strong>Experience</strong><small>Learn through story, craft, movement, and play.</small></div></li>
+          <li><span>03</span><div><strong>Remember</strong><small>Close with an ayah, dua, and joyful repetition.</small></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="community-preview shell" aria-labelledby="communityHeading">
+      <div class="section-heading compact">
+        <div><span class="eyebrow"><i></i> Made alive by families</span><h2 id="communityHeading">Small moments.<br><em>Shared inspiration.</em></h2></div>
+        <p>Parents and teachers can share how they brought each word to life. Approved experiences appear inside that word’s page.</p>
+      </div>
+      <div class="quote-strip" aria-hidden="true">
+        <article><span>“</span><p>We used cotton clouds, then waited for real rain. The word stayed with them all week.</p><small>Family experience</small></article>
+        <article><span>“</span><p>The patience activity turned a difficult idea into something my four-year-old could feel.</p><small>Teacher experience</small></article>
+        <article><span>“</span><p>He now points to the moon and says قَمَرٌ before I do.</p><small>Parent experience</small></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div class="brand footer-brand"><span class="brand-mark" lang="ar" dir="rtl">ق</span><span><strong>Young Hearts</strong><small>Quranic Arabic</small></span></div>
+      <p>Created to help Qur’anic Arabic live inside a child’s memory—not only on a page.</p>
+      <a href="admin.html">Educator studio <span aria-hidden="true">→</span></a>
+    </div>
+  </footer>
+
+  <div class="word-modal" id="wordModal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="word-dialog" role="dialog" aria-modal="true" aria-labelledby="wordTitle" tabindex="-1">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close word details">×</button>
+      <div class="dialog-hero" id="dialogHero">
+        <div class="dialog-letter" id="dialogLetter" lang="ar" dir="rtl">ا</div>
+        <div class="dialog-title-wrap">
+          <span class="dialog-kicker" id="dialogKicker">Letter ا</span>
+          <h2 id="wordTitle" lang="ar" dir="rtl">الله</h2>
+          <p id="wordEnglish">Allah</p>
+        </div>
+        <button class="mark-button" id="markLearnedBtn" type="button"><span aria-hidden="true">♡</span><span>Mark explored</span></button>
+      </div>
+
+      <div class="dialog-nav" role="tablist" aria-label="Word learning sections">
+        <button class="dialog-tab is-active" role="tab" aria-selected="true" tabindex="0" data-tab="guide">Guide</button>
+        <button class="dialog-tab" role="tab" aria-selected="false" tabindex="-1" data-tab="activity">Activity</button>
+        <button class="dialog-tab" role="tab" aria-selected="false" tabindex="-1" data-tab="heart">Story &amp; Qur’an</button>
+        <button class="dialog-tab" role="tab" aria-selected="false" tabindex="-1" data-tab="community">Experiences</button>
+        <button class="dialog-tab" role="tab" aria-selected="false" tabindex="-1" data-tab="share">Share yours</button>
+      </div>
+
+      <div class="dialog-scroll" id="dialogScroll">
+        <section class="dialog-panel is-active" role="tabpanel" data-panel="guide">
+          <div class="purpose-banner"><span aria-hidden="true">✦</span><div><small>The heart of this word</small><p id="purposeText"></p></div></div>
+          <div class="content-grid two-col">
+            <article class="content-card"><span class="card-icon">◎</span><div><h3>How to guide</h3><p id="instructionsText"></p></div></article>
+            <article class="content-card"><span class="card-icon">☀</span><div><h3>Warm-up</h3><ol id="warmupList"></ol></div></article>
+          </div>
+          <article class="content-card full"><span class="card-icon">✓</span><div><h3>Beautiful ending</h3><p id="wrapText"></p></div></article>
+        </section>
+
+        <section class="dialog-panel" role="tabpanel" data-panel="activity" hidden>
+          <div class="content-grid two-col">
+            <article class="content-card materials"><span class="card-icon">✂</span><div><h3>Prepare</h3><ul id="prepList"></ul></div></article>
+            <article class="content-card steps"><span class="card-icon">1·2·3</span><div><h3>Do it together</h3><ol id="activityList"></ol></div></article>
+          </div>
+        </section>
+
+        <section class="dialog-panel" role="tabpanel" data-panel="heart" hidden>
+          <article class="story-card"><span class="story-label">A story for the heart</span><p id="storyText"></p></article>
+          <div class="heart-grid">
+            <article class="ayah-card"><span lang="ar" dir="rtl">آية</span><h3>Qur’an connection</h3><blockquote id="quranText"></blockquote></article>
+            <article class="dua-card"><span lang="ar" dir="rtl">دعاء</span><h3>Make this dua</h3><p id="duaText"></p></article>
+          </div>
+        </section>
+
+        <section class="dialog-panel" role="tabpanel" data-panel="community" hidden>
+          <div class="panel-heading"><div><span class="eyebrow"><i></i> Community ideas</span><h3>See how others brought it alive</h3></div><button class="soft-button" data-open-share type="button">Share yours</button></div>
+          <div class="experience-grid" id="experienceGrid"><div class="experience-loading">Loading experiences…</div></div>
+        </section>
+
+        <section class="dialog-panel" role="tabpanel" data-panel="share" hidden>
+          <div class="share-layout">
+            <div class="share-intro"><span class="eyebrow"><i></i> Inspire another family</span><h3>Share your experience</h3><p>Tell us what you tried, what the child noticed, and what made the moment special. Submissions are reviewed before they appear publicly.</p><div class="privacy-note"><span>✓</span><p>Only the name and experience you provide will be shown after approval.</p></div></div>
+            <form class="share-form" id="experienceForm">
+              <label>Your name<input name="name" type="text" maxlength="80" placeholder="e.g., Amina’s family" required></label>
+              <label>What happened?<textarea name="description" minlength="10" maxlength="1500" rows="6" placeholder="Describe the activity, materials, reaction, or lesson…" required></textarea></label>
+              <label class="file-drop" id="fileDrop"><input name="file" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf"><span class="drop-icon">↑</span><strong>Add a photo, short video, or PDF</strong><small id="fileLabel">Optional · up to 6 MB</small></label>
+              <button class="primary-button submit-experience" type="submit">Send for review <span aria-hidden="true">→</span></button>
+              <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/app-loader.js"></script>
+</body>
+</html>
