@@ -1,0 +1,384 @@
+
+/* QAJ Young Hearts V2.5 — add draft words, publish later, and manage book illustrations */
+(() => {
+  "use strict";
+
+  const cfg = window.QAJ_CONFIG || {};
+  if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+
+  const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+    auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
+  const bucket = cfg.publicBucket || "qaj-yh-media";
+  const maxRawImageBytes = 35 * 1024 * 1024;
+  const allowedImages = new Set(["image/jpeg","image/png","image/webp"]);
+  const wordEditor = document.querySelector("#wordEditor");
+  const hiddenWordId = wordEditor?.querySelector('input[name="id"]');
+
+  let toolsPromise = null;
+  let lettersCache = [];
+  let currentWordId = "";
+  let currentImagePath = "";
+  let imageLoadToken = 0;
+
+  const safeName = name => String(name || "image")
+    .replace(/\.[^.]+$/, "")
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9._-]+/g,"-")
+    .replace(/^-+|-+$/g,"")
+    .slice(0,80) || "image";
+
+  function publicUrl(path) {
+    return path ? client.storage.from(bucket).getPublicUrl(path).data.publicUrl : "";
+  }
+
+  function loadTools() {
+    if (window.QAJ_IMAGE_TOOLS) return Promise.resolve(window.QAJ_IMAGE_TOOLS);
+    if (toolsPromise) return toolsPromise;
+    toolsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("assets/image-tools.js", location.href).href;
+      script.onload = () => window.QAJ_IMAGE_TOOLS ? resolve(window.QAJ_IMAGE_TOOLS) : reject(new Error("Image optimizer did not start"));
+      script.onerror = () => reject(new Error("Image optimizer could not load"));
+      document.head.append(script);
+    });
+    return toolsPromise;
+  }
+
+  async function getUser() {
+    const { data:{ user }, error } = await client.auth.getUser();
+    if (error) throw error;
+    if (!user) throw new Error("Your admin session has expired. Please sign in again.");
+    return user;
+  }
+
+  function injectAddWordButton() {
+    const heading = document.querySelector('[data-admin-view="content"] .admin-heading');
+    if (!heading || heading.querySelector(".qaj-add-word-button")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "primary-button qaj-add-word-button";
+    button.innerHTML = 'Add new word <span aria-hidden="true">＋</span>';
+    button.addEventListener("click", openNewWordModal);
+    heading.append(button);
+  }
+
+  function buildNewWordModal() {
+    if (document.querySelector("#qajNewWordModal")) return;
+    const modal = document.createElement("div");
+    modal.className = "qaj-word-modal";
+    modal.id = "qajNewWordModal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="qaj-word-modal-card" role="dialog" aria-modal="true" aria-labelledby="qajNewWordTitle">
+        <div class="qaj-word-modal-head">
+          <div><h3 id="qajNewWordTitle">Add a new word</h3><p>Create it as a private draft, complete the lesson, then publish it when ready.</p></div>
+          <button type="button" data-close-qaj-word aria-label="Close">×</button>
+        </div>
+        <form class="qaj-new-word-form" id="qajNewWordForm">
+          <label>Arabic letter<select name="letter_id" required></select></label>
+          <div class="form-grid">
+            <label>Arabic word<input class="qaj-arabic-input" name="arabic_word" required maxlength="100"></label>
+            <label>English meaning<input name="english" required maxlength="120"></label>
+          </div>
+          <label>Purpose or learning idea<textarea name="purpose" rows="3" placeholder="You can complete the full lesson after the word is created."></textarea></label>
+          <label>Original-book image<input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
+          <label>Image description<input name="image_alt" maxlength="180" placeholder="e.g., Illustration of an olive branch from the book"></label>
+          <div class="qaj-word-draft-note">The new word starts as <strong>Draft</strong>. It will not appear on the public website until an administrator changes Publication to <strong>Published</strong> and saves it.</div>
+          <div class="form-actions"><button class="soft-button" type="button" data-close-qaj-word>Cancel</button><button class="primary-button" type="submit">Create draft word</button></div>
+          <p class="qaj-word-form-status" id="qajNewWordStatus" role="status"></p>
+        </form>
+      </div>`;
+    document.body.append(modal);
+    modal.querySelectorAll("[data-close-qaj-word]").forEach(button => button.addEventListener("click", closeNewWordModal));
+    modal.addEventListener("click", event => { if (event.target === modal) closeNewWordModal(); });
+    modal.querySelector("form")?.addEventListener("submit", createDraftWord);
+  }
+
+  async function loadLetters() {
+    if (lettersCache.length) return lettersCache;
+    const { data, error } = await client.from("qaj_yh_letters").select("id,code,position").order("position");
+    if (error) throw error;
+    lettersCache = data || [];
+    return lettersCache;
+  }
+
+  async function openNewWordModal() {
+    buildNewWordModal();
+    const modal = document.querySelector("#qajNewWordModal");
+    const select = modal.querySelector('select[name="letter_id"]');
+    const activeLetter = document.querySelector("#adminLetterList [data-letter-id].is-active")?.dataset.letterId || "";
+    try {
+      const letters = await loadLetters();
+      select.innerHTML = letters.map(letter => `<option value="${letter.id}">Letter ${letter.code}</option>`).join("");
+      if (activeLetter) select.value = activeLetter;
+      modal.hidden = false;
+      modal.querySelector('input[name="arabic_word"]')?.focus();
+    } catch (error) {
+      console.error(error);
+      alert("Letters could not be loaded right now.");
+    }
+  }
+
+  function closeNewWordModal() {
+    const modal = document.querySelector("#qajNewWordModal");
+    if (!modal) return;
+    modal.hidden = true;
+    modal.querySelector("form")?.reset();
+    const status = modal.querySelector("#qajNewWordStatus");
+    if (status) { status.textContent = ""; status.className = "qaj-word-form-status"; }
+  }
+
+  async function uploadOptimizedWordImage(wordId, sourceFile, altText, oldPath = "") {
+    if (!(sourceFile instanceof File) || !sourceFile.size) return { image_path: oldPath || null, image_alt: altText || "", optimization:null };
+    if (!allowedImages.has(sourceFile.type)) throw new Error("Use a JPG, PNG, or WebP image.");
+    if (sourceFile.size > maxRawImageBytes) throw new Error("The original image must be below 35 MB.");
+
+    const tools = await loadTools();
+    const optimized = await tools.optimize(sourceFile, {
+      maxDimension: 1600,
+      targetBytes: 700 * 1024,
+      triggerBytes: 500 * 1024,
+      quality:.87,
+      minQuality:.60
+    });
+    const file = optimized.file;
+    const path = `word-images/${wordId}/${crypto.randomUUID()}-${safeName(file.name)}.webp`;
+    const { error:uploadError } = await client.storage.from(bucket).upload(path, file, {
+      contentType:"image/webp",
+      cacheControl:"31536000",
+      upsert:false
+    });
+    if (uploadError) throw uploadError;
+
+    const { error:updateError } = await client.from("qaj_yh_words").update({
+      image_path:path,
+      image_alt:String(altText || "").trim(),
+      updated_at:new Date().toISOString()
+    }).eq("id", wordId);
+    if (updateError) {
+      await client.storage.from(bucket).remove([path]);
+      throw updateError;
+    }
+
+    if (oldPath && oldPath !== path) {
+      const removal = await client.storage.from(bucket).remove([oldPath]);
+      if (removal.error) console.warn("Old word image could not be removed", removal.error);
+    }
+    return { image_path:path, image_alt:String(altText || "").trim(), optimization:optimized };
+  }
+
+  async function createDraftWord(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = form.querySelector("#qajNewWordStatus");
+    const submit = form.querySelector('button[type="submit"]');
+    status.className = "qaj-word-form-status";
+    status.textContent = "Creating private draft…";
+    submit.disabled = true;
+
+    try {
+      const user = await getUser();
+      const data = new FormData(form);
+      const letterId = String(data.get("letter_id") || "");
+      const arabic = String(data.get("arabic_word") || "").trim();
+      const english = String(data.get("english") || "").trim();
+      const purpose = String(data.get("purpose") || "").trim();
+      const image = data.get("image");
+      const imageAlt = String(data.get("image_alt") || "").trim();
+
+      const { data:lastPosition, error:positionError } = await client.from("qaj_yh_words")
+        .select("position").eq("letter_id",letterId).order("position",{ascending:false}).limit(1).maybeSingle();
+      if (positionError) throw positionError;
+
+      const payload = {
+        letter_id:letterId,
+        arabic_word:arabic,
+        english,
+        purpose,
+        instructions:"",
+        prep:[],
+        warmup:[],
+        activity:[],
+        story:"",
+        quran:"",
+        dua:"",
+        wrap_up:"",
+        position:(lastPosition?.position || 0) + 1,
+        published:false,
+        image_alt:imageAlt,
+        updated_by:user.id
+      };
+      const { data:word, error:insertError } = await client.from("qaj_yh_words").insert(payload).select().single();
+      if (insertError) throw insertError;
+
+      let optimization = null;
+      if (image instanceof File && image.size) {
+        status.textContent = "Optimizing and storing the book image…";
+        const result = await uploadOptimizedWordImage(word.id, image, imageAlt);
+        optimization = result.optimization;
+      }
+
+      status.className = "qaj-word-form-status success";
+      status.textContent = optimization?.changed
+        ? `Draft created. Image reduced by ${optimization.savingsPercent}%. Opening the editor…`
+        : "Draft created. Opening the editor…";
+      sessionStorage.setItem("qaj-yh-open-word", word.id);
+      setTimeout(() => location.reload(), 650);
+    } catch (error) {
+      console.error(error);
+      status.className = "qaj-word-form-status error";
+      status.textContent = error.message || "The draft word could not be created.";
+    } finally {
+      submit.disabled = false;
+    }
+  }
+
+  function injectImageManager() {
+    if (!wordEditor || wordEditor.querySelector("#qajWordImageManager")) return;
+    const publication = wordEditor.querySelector('select[name="published"]')?.closest("label");
+    const manager = document.createElement("section");
+    manager.className = "qaj-word-image-manager";
+    manager.id = "qajWordImageManager";
+    manager.innerHTML = `
+      <div class="qaj-word-image-preview" id="qajWordImagePreview">No book image yet</div>
+      <div class="qaj-word-image-fields">
+        <h4>Default image from the original book</h4>
+        <p>This image appears beside the word on the public letter card. Large uploads are automatically resized and converted to WebP before storage.</p>
+        <input id="qajWordImageFile" type="file" accept="image/jpeg,image/png,image/webp">
+        <input id="qajWordImageAlt" type="text" maxlength="180" placeholder="Short image description">
+        <div class="qaj-word-image-actions"><button class="primary-button" id="qajSaveWordImage" type="button">Upload / save image</button><button class="soft-button" id="qajRemoveWordImage" type="button">Remove image</button></div>
+        <p class="qaj-word-form-status" id="qajWordImageStatus" role="status"></p>
+      </div>`;
+    wordEditor.insertBefore(manager, publication || wordEditor.querySelector(".form-actions"));
+    manager.querySelector("#qajSaveWordImage")?.addEventListener("click", saveCurrentWordImage);
+    manager.querySelector("#qajRemoveWordImage")?.addEventListener("click", removeCurrentWordImage);
+  }
+
+  async function loadCurrentWordImage(wordId) {
+    if (!wordId) return;
+    const token = ++imageLoadToken;
+    const preview = document.querySelector("#qajWordImagePreview");
+    const alt = document.querySelector("#qajWordImageAlt");
+    const status = document.querySelector("#qajWordImageStatus");
+    if (preview) preview.textContent = "Loading image…";
+    if (status) status.textContent = "";
+
+    const { data, error } = await client.from("qaj_yh_words").select("image_path,image_alt,published").eq("id",wordId).maybeSingle();
+    if (token !== imageLoadToken) return;
+    if (error) {
+      console.error(error);
+      if (preview) preview.textContent = "Image could not load";
+      return;
+    }
+    currentImagePath = data?.image_path || "";
+    if (alt) alt.value = data?.image_alt || "";
+    if (preview) {
+      preview.innerHTML = currentImagePath
+        ? `<img src="${publicUrl(currentImagePath)}" alt="${String(data?.image_alt || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}">`
+        : "No book image yet";
+    }
+    const remove = document.querySelector("#qajRemoveWordImage");
+    if (remove) remove.disabled = !currentImagePath;
+  }
+
+  async function saveCurrentWordImage() {
+    const wordId = hiddenWordId?.value || "";
+    if (!wordId) return;
+    const fileInput = document.querySelector("#qajWordImageFile");
+    const altInput = document.querySelector("#qajWordImageAlt");
+    const status = document.querySelector("#qajWordImageStatus");
+    const button = document.querySelector("#qajSaveWordImage");
+    status.className = "qaj-word-form-status";
+    status.textContent = fileInput.files?.[0] ? "Optimizing and uploading image…" : "Saving image description…";
+    button.disabled = true;
+
+    try {
+      const user = await getUser();
+      const file = fileInput.files?.[0];
+      const altText = altInput.value.trim();
+      let result = null;
+      if (file) {
+        result = await uploadOptimizedWordImage(wordId, file, altText, currentImagePath);
+        currentImagePath = result.image_path;
+        fileInput.value = "";
+      } else {
+        const { error } = await client.from("qaj_yh_words").update({
+          image_alt:altText,
+          updated_by:user.id,
+          updated_at:new Date().toISOString()
+        }).eq("id",wordId);
+        if (error) throw error;
+      }
+      await loadCurrentWordImage(wordId);
+      status.className = "qaj-word-form-status success";
+      status.textContent = result?.optimization?.changed
+        ? `Image saved at ${result.optimization.savingsPercent}% smaller than the original.`
+        : "Book image details saved.";
+    } catch (error) {
+      console.error(error);
+      status.className = "qaj-word-form-status error";
+      status.textContent = error.message || "The image could not be saved.";
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function removeCurrentWordImage() {
+    const wordId = hiddenWordId?.value || "";
+    if (!wordId || !currentImagePath) return;
+    if (!confirm("Remove this default book image from the word?")) return;
+    const status = document.querySelector("#qajWordImageStatus");
+    try {
+      const user = await getUser();
+      const oldPath = currentImagePath;
+      const { error } = await client.from("qaj_yh_words").update({
+        image_path:null,
+        image_alt:"",
+        updated_by:user.id,
+        updated_at:new Date().toISOString()
+      }).eq("id",wordId);
+      if (error) throw error;
+      const removal = await client.storage.from(bucket).remove([oldPath]);
+      if (removal.error) console.warn("Word image storage cleanup failed", removal.error);
+      currentImagePath = "";
+      await loadCurrentWordImage(wordId);
+      status.className = "qaj-word-form-status success";
+      status.textContent = "Book image removed.";
+    } catch (error) {
+      console.error(error);
+      status.className = "qaj-word-form-status error";
+      status.textContent = error.message || "The image could not be removed.";
+    }
+  }
+
+  function watchSelectedWord() {
+    if (!hiddenWordId) return;
+    setInterval(() => {
+      const nextId = hiddenWordId.value || "";
+      if (!nextId || nextId === currentWordId) return;
+      currentWordId = nextId;
+      loadCurrentWordImage(nextId);
+    }, 300);
+  }
+
+  function reopenCreatedWord() {
+    const wanted = sessionStorage.getItem("qaj-yh-open-word");
+    if (!wanted) return;
+    const timer = setInterval(() => {
+      const button = document.querySelector(`#adminWordList [data-word-id="${CSS.escape(wanted)}"]`);
+      if (!button) return;
+      clearInterval(timer);
+      sessionStorage.removeItem("qaj-yh-open-word");
+      button.click();
+      button.scrollIntoView({block:"nearest"});
+    }, 300);
+    setTimeout(() => clearInterval(timer), 8000);
+  }
+
+  injectAddWordButton();
+  buildNewWordModal();
+  injectImageManager();
+  watchSelectedWord();
+  reopenCreatedWord();
+})();
