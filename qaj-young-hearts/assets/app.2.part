@@ -1,0 +1,235 @@
+st"), word.warmup);
+    renderList($("#prepList"), word.prep);
+    renderList($("#activityList"), word.activity);
+    updateMarkButton();
+    activateTab("guide");
+    elements.modal.hidden = false;
+    document.body.classList.add("modal-open");
+    elements.dialogScroll.scrollTop = 0;
+    requestAnimationFrame(() => elements.dialog.focus());
+  }
+
+  function renderList(element, items) {
+    element.innerHTML = arrayOf(items).map(item => `<li>${esc(item)}</li>`).join("") || "<li>Educator can add this step in the studio.</li>";
+  }
+
+  function closeModal() {
+    elements.modal.hidden = true;
+    document.body.classList.remove("modal-open");
+    if (elements.bookAudio && !elements.bookAudio.paused) { /* keep the book song playing */ }
+    state.lastFocused?.focus?.();
+  }
+
+  function activateTab(name, focus = false) {
+    $$(".dialog-tab", elements.modal).forEach(tab => {
+      const active = tab.dataset.tab === name;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+      if (active && focus) tab.focus();
+    });
+    $$(".dialog-panel", elements.modal).forEach(panel => {
+      const active = panel.dataset.panel === name;
+      panel.classList.toggle("is-active", active);
+      panel.hidden = !active;
+    });
+    elements.dialogScroll.scrollTop = 0;
+    if (name === "community") loadExperiences();
+  }
+
+  async function loadExperiences(force = false) {
+    if (!state.currentWord) return;
+    const wordId = state.currentWord.id;
+    if (!state.backendReady || wordId.startsWith("fallback-")) {
+      renderExperiences([]);
+      return;
+    }
+    if (!force && state.experienceCache.has(wordId)) {
+      renderExperiences(state.experienceCache.get(wordId));
+      return;
+    }
+    elements.experienceGrid.innerHTML = '<div class="experience-loading">Loading experiences…</div>';
+    const { data, error } = await state.client.from("qaj_yh_experiences")
+      .select("id,contributor_name,description,media_path,media_mime,created_at")
+      .eq("word_id", wordId).eq("status", "approved").order("created_at", { ascending: false }).limit(24);
+    if (error) {
+      console.warn(error);
+      elements.experienceGrid.innerHTML = '<div class="experience-empty">Experiences could not load right now.</div>';
+      return;
+    }
+    state.experienceCache.set(wordId, data || []);
+    renderExperiences(data || []);
+  }
+
+  function renderExperiences(items) {
+    if (!items.length) {
+      elements.experienceGrid.innerHTML = '<div class="experience-empty"><strong>Be the first to inspire another family.</strong><br>Share how you brought this word to life.</div>';
+      return;
+    }
+    elements.experienceGrid.innerHTML = items.map(item => {
+      const mediaUrl = item.media_path ? state.client.storage.from(cfg.publicBucket).getPublicUrl(item.media_path).data.publicUrl : "";
+      let media = "";
+      if (mediaUrl && item.media_mime?.startsWith("image/")) media = `<div class="experience-card-media"><img loading="lazy" src="${esc(mediaUrl)}" alt="Shared learning experience"></div>`;
+      else if (mediaUrl && item.media_mime?.startsWith("video/")) media = `<div class="experience-card-media"><video controls preload="metadata" src="${esc(mediaUrl)}"></video></div>`;
+      else if (mediaUrl) media = `<p><a href="${esc(mediaUrl)}" target="_blank" rel="noopener">View attached activity file ↗</a></p>`;
+      return `<article class="experience-card">${media}<strong>${esc(item.contributor_name || "A Young Hearts family")}</strong><p>${esc(item.description || "")}</p><small>${esc(formatDate(item.created_at))}</small></article>`;
+    }).join("");
+  }
+
+  function saveProgress() {
+    localStorage.setItem("qaj-yh-explored", JSON.stringify([...state.explored]));
+    updateProgress();
+  }
+
+  function updateMarkButton() {
+    const marked = state.currentWord && state.explored.has(state.currentWord.id);
+    elements.markLearned.classList.toggle("is-marked", marked);
+    elements.markLearned.innerHTML = marked ? '<span aria-hidden="true">♥</span><span>Explored</span>' : '<span aria-hidden="true">♡</span><span>Mark explored</span>';
+  }
+
+  function updateProgress() {
+    const validIds = new Set(state.words.map(word => word.id));
+    const exploredCount = [...state.explored].filter(id => validIds.has(id)).length;
+    const percent = state.words.length ? Math.round((exploredCount / state.words.length) * 100) : 0;
+    elements.progressRing.style.setProperty("--progress", percent);
+    elements.progressPercent.textContent = `${percent}%`;
+    elements.progressText.textContent = exploredCount ? `${exploredCount} of ${state.words.length} words explored` : "Open your first word";
+  }
+
+  function updateContinueButton() {
+    const word = state.words.find(item => item.id === state.lastWordId);
+    elements.continueBtn.hidden = !word;
+    if (word) elements.continueBtn.onclick = () => openWord(word.id, elements.continueBtn);
+  }
+
+  function setupAudio() {
+    const track = state.audioTracks.find(item => item.scope_type === "book" && item.featured) || state.audioTracks.find(item => item.scope_type === "book");
+    if (!track || !track.storage_path || !state.client) return;
+    const url = state.client.storage.from(cfg.publicBucket).getPublicUrl(track.storage_path).data.publicUrl;
+    elements.bookAudio.src = url;
+    elements.audioTitle.textContent = track.title || "Young Hearts Song";
+    elements.audioDescription.textContent = track.description || "A special song for this learning journey.";
+    elements.songSection.hidden = false;
+    elements.audioPlay.addEventListener("click", async () => {
+      if (elements.bookAudio.paused) {
+        try { await elements.bookAudio.play(); } catch { toast("Your browser blocked audio playback. Tap play again.", "error"); }
+      } else elements.bookAudio.pause();
+    });
+    elements.bookAudio.addEventListener("play", () => { elements.audioPlay.classList.add("is-playing"); elements.audioPlay.setAttribute("aria-label", "Pause book song"); });
+    elements.bookAudio.addEventListener("pause", () => { elements.audioPlay.classList.remove("is-playing"); elements.audioPlay.setAttribute("aria-label", "Play book song"); });
+    elements.bookAudio.addEventListener("timeupdate", () => {
+      const duration = elements.bookAudio.duration || 0;
+      elements.audioSeek.value = duration ? String((elements.bookAudio.currentTime / duration) * 100) : "0";
+      elements.audioTime.textContent = `${formatTime(elements.bookAudio.currentTime)} / ${formatTime(duration)}`;
+    });
+    elements.audioSeek.addEventListener("input", () => {
+      if (elements.bookAudio.duration) elements.bookAudio.currentTime = (Number(elements.audioSeek.value) / 100) * elements.bookAudio.duration;
+    });
+  }
+
+  async function submitExperience(event) {
+    event.preventDefault();
+    const submitButton = $("button[type=submit]", elements.form);
+    elements.formStatus.className = "form-status";
+    if (!state.backendReady || !state.currentWord || state.currentWord.id.startsWith("fallback-")) {
+      elements.formStatus.textContent = "The live submission service is not connected in this preview.";
+      elements.formStatus.classList.add("error");
+      return;
+    }
+    const formData = new FormData(elements.form);
+    const file = formData.get("file");
+    if (file?.size > cfg.maxSubmissionBytes) {
+      elements.formStatus.textContent = "Please choose a file smaller than 6 MB.";
+      elements.formStatus.classList.add("error");
+      return;
+    }
+    formData.set("word_id", state.currentWord.id);
+    formData.set("letter_id", state.currentLetter.id);
+    submitButton.disabled = true;
+    elements.formStatus.textContent = "Sending your experience securely…";
+    try {
+      const response = await fetch(`${cfg.supabaseUrl}/functions/v1/${cfg.submissionFunction}`, {
+        method: "POST",
+        headers: { apikey: cfg.supabaseKey, Authorization: `Bearer ${cfg.supabaseKey}` },
+        body: formData
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Submission failed");
+      elements.form.reset();
+      elements.fileLabel.textContent = "Optional · up to 6 MB";
+      elements.formStatus.textContent = "Thank you. Your experience is waiting for educator review.";
+      elements.formStatus.classList.add("success");
+      toast("Experience submitted for review.");
+    } catch (error) {
+      console.error(error);
+      elements.formStatus.textContent = error.message || "Could not submit right now. Please try again.";
+      elements.formStatus.classList.add("error");
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  function trapDialogFocus(event) {
+    if (elements.modal.hidden || event.key !== "Tab") return;
+    const focusable = $$('button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])', elements.dialog).filter(el => !el.closest("[hidden]"));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
+  function bindEvents() {
+    elements.search.addEventListener("input", runSearch);
+    elements.resetSearch.addEventListener("click", () => { elements.search.value = ""; runSearch(); elements.search.focus(); });
+    elements.randomBtn.addEventListener("click", () => {
+      const word = state.words[Math.floor(Math.random() * state.words.length)];
+      if (word) openWord(word.id, elements.randomBtn);
+    });
+    $$('[data-close-modal]', elements.modal).forEach(node => node.addEventListener("click", closeModal));
+    elements.modal.addEventListener("keydown", trapDialogFocus);
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !elements.modal.hidden) closeModal();
+    });
+    $$(".dialog-tab", elements.modal).forEach((tab, index, tabs) => {
+      tab.addEventListener("click", () => activateTab(tab.dataset.tab));
+      tab.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        let next = index;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") next = 0;
+        if (event.key === "End") next = tabs.length - 1;
+        activateTab(tabs[next].dataset.tab, true);
+      });
+    });
+    $$('[data-open-share]', elements.modal).forEach(node => node.addEventListener("click", () => activateTab("share", true)));
+    elements.markLearned.addEventListener("click", () => {
+      if (!state.currentWord) return;
+      if (state.explored.has(state.currentWord.id)) state.explored.delete(state.currentWord.id);
+      else state.explored.add(state.currentWord.id);
+      saveProgress();
+      updateMarkButton();
+    });
+    elements.form.addEventListener("submit", submitExperience);
+    elements.fileInput.addEventListener("change", () => {
+      const file = elements.fileInput.files?.[0];
+      elements.fileLabel.textContent = file ? `${safeFileName(file.name)} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : "Optional · up to 6 MB";
+    });
+  }
+
+  async function init() {
+    bindEvents();
+    const connected = await connectBackend();
+    if (!connected) applyFallback();
+    applySettings();
+    renderLetters();
+    updateProgress();
+    updateContinueButton();
+    setupAudio();
+  }
+
+  init().catch(error => {
+    console.error(error);
+  
