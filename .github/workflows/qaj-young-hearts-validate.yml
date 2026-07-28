@@ -5,7 +5,6 @@ on:
     paths:
       - 'qaj-young-hearts/**'
       - '.github/workflows/qaj-young-hearts-validate.yml'
-      - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -48,7 +47,7 @@ jobs:
                   raise SystemExit(f'{path} is not a complete HTML document')
           PY
 
-      - name: Validate required files
+      - name: Validate required release files
         shell: bash
         run: |
           set -euo pipefail
@@ -56,6 +55,7 @@ jobs:
             qaj-young-hearts/assets/config.js
             qaj-young-hearts/assets/styles.1.part
             qaj-young-hearts/assets/styles.4.part
+            qaj-young-hearts/assets/styles.9.part
             qaj-young-hearts/assets/app.1.part
             qaj-young-hearts/assets/app.3.part
             qaj-young-hearts/assets/admin.1.part
@@ -70,20 +70,14 @@ jobs:
             test -s "$path" || { echo "Missing or empty release file: $path" >&2; exit 1; }
           done
 
-      - name: Reconstruct and validate official cover
+      - name: Validate embedded official cover
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          chunks=(qaj-young-hearts/assets/cover/qaj-book-cover.b64.*)
-          test "${#chunks[@]}" -eq 6 || {
-            echo "Expected 6 cover chunks, found ${#chunks[@]}" >&2
-            exit 1
-          }
-          cat "${chunks[@]}" | tr -d '\r\n ' | base64 --decode > /tmp/qaj-book-cover.webp
-          test "$(head -c 4 /tmp/qaj-book-cover.webp)" = 'RIFF'
-          test "$(stat -c%s /tmp/qaj-book-cover.webp)" -eq 43556
-          echo '8a0d56b73e4360592920096e1c667fb79a14226595b10b3d2a7edc83344d0bdd  /tmp/qaj-book-cover.webp' | sha256sum --check --strict
+          cover_css=qaj-young-hearts/assets/styles.9.part
+          grep -q 'data:image/webp;base64,UklGR' "$cover_css"
+          test "$(stat -c%s "$cover_css")" -gt 12000
+          test "$(git hash-object "$cover_css")" = '61b903b1c45310cea0de2ea0a50f76ea93c6ef33'
 
       - name: Validate icon binaries
         shell: bash
