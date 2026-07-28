@@ -1,0 +1,3 @@
+
+/* Resolve the official cover path from the document-level injected stylesheet. */
+.book-card{background-image:url('assets/qaj-book-cover.webp')!important}
