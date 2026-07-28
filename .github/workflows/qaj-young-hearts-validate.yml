@@ -5,6 +5,7 @@ on:
     paths:
       - 'qaj-young-hearts/**'
       - '.github/workflows/qaj-young-hearts-validate.yml'
+      - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -59,7 +60,6 @@ jobs:
             qaj-young-hearts/assets/app.3.part
             qaj-young-hearts/assets/admin.1.part
             qaj-young-hearts/assets/admin.3.part
-            qaj-young-hearts/qaj-book-cover.webp
             qaj-young-hearts/assets/icons/favicon.svg
             qaj-young-hearts/assets/icons/favicon-32.png
             qaj-young-hearts/assets/icons/apple-touch-icon.png
@@ -70,19 +70,20 @@ jobs:
             test -s "$path" || { echo "Missing or empty release file: $path" >&2; exit 1; }
           done
 
-      - name: Validate official cover
+      - name: Reconstruct and validate official cover
         shell: bash
         run: |
           set -euo pipefail
-          cover=qaj-young-hearts/qaj-book-cover.webp
-          test "$(head -c 4 "$cover")" = "RIFF" || {
-            echo 'Official cover is not a WebP RIFF container' >&2
+          shopt -s nullglob
+          chunks=(qaj-young-hearts/assets/cover/qaj-book-cover.b64.*)
+          test "${#chunks[@]}" -eq 6 || {
+            echo "Expected 6 cover chunks, found ${#chunks[@]}" >&2
             exit 1
           }
-          test "$(stat -c%s "$cover")" -gt 20000 || {
-            echo 'Official cover file is suspiciously small' >&2
-            exit 1
-          }
+          cat "${chunks[@]}" | tr -d '\r\n ' | base64 --decode > /tmp/qaj-book-cover.webp
+          test "$(head -c 4 /tmp/qaj-book-cover.webp)" = 'RIFF'
+          test "$(stat -c%s /tmp/qaj-book-cover.webp)" -eq 43556
+          echo '8a0d56b73e4360592920096e1c667fb79a14226595b10b3d2a7edc83344d0bdd  /tmp/qaj-book-cover.webp' | sha256sum --check --strict
 
       - name: Validate icon binaries
         shell: bash
