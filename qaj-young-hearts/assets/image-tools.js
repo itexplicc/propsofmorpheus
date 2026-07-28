@@ -98,7 +98,7 @@
         scale *= .82;
       }
 
-      if (!best || (best.size >= file.size && !needsResize)) {
+      if (!best || (file.type === "image/webp" && best.size >= file.size && !needsResize)) {
         return { file, changed: false, originalBytes: file.size, optimizedBytes: file.size, savingsPercent: 0, width: source.width, height: source.height };
       }
 
