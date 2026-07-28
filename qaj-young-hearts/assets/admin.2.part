@@ -1,0 +1,181 @@
+.value = toLines(word.warmup);
+    f.activity.value = toLines(word.activity);
+    f.story.value = word.story || "";
+    f.quran.value = word.quran || "";
+    f.dua.value = word.dua || "";
+    f.wrap_up.value = word.wrap_up || "";
+    f.published.value = String(Boolean(word.published));
+  }
+
+  async function saveWord(event) {
+    event.preventDefault();
+    const f = el.wordEditor.elements;
+    const id = f.id.value;
+    const payload = {
+      arabic_word:f.arabic_word.value.trim(), english:f.english.value.trim(), purpose:f.purpose.value.trim(), instructions:f.instructions.value.trim(),
+      prep:lines(f.prep.value), warmup:lines(f.warmup.value), activity:lines(f.activity.value), story:f.story.value.trim(), quran:f.quran.value.trim(), dua:f.dua.value.trim(), wrap_up:f.wrap_up.value.trim(),
+      published:f.published.value === "true", updated_by:state.user.id, updated_at:new Date().toISOString()
+    };
+    saving();
+    const { data, error } = await state.client.from("qaj_yh_words").update(payload).eq("id", id).select().single();
+    if (error) return fail(error, "The word could not be saved.");
+    state.words = state.words.map(word => word.id === id ? data : word);
+    renderContentLists();
+    renderOverview();
+    saved();
+    toast("Word saved.");
+  }
+
+  function renderAudioTargets() {
+    const type = el.audioScopeType.value;
+    el.audioScopeTargetWrap.hidden = type === "book";
+    if (type === "letter") el.audioScopeTarget.innerHTML = state.letters.map(letter => `<option value="${letter.id}">Letter ${esc(letter.code)}</option>`).join("");
+    else if (type === "word") el.audioScopeTarget.innerHTML = state.words.map(word => `<option value="${word.id}">${esc(word.arabic_word)} — ${esc(word.english)}</option>`).join("");
+  }
+
+  function audioScopeLabel(track) {
+    if (track.scope_type === "book") return "Whole book";
+    if (track.scope_type === "letter") return `Letter ${state.letters.find(item => item.id === track.scope_id)?.code || "—"}`;
+    const word = state.words.find(item => item.id === track.scope_id);
+    return word ? `${word.arabic_word} · ${word.english}` : "Word";
+  }
+
+  function renderAudio() {
+    el.audioCount.textContent = `${state.audio.length} ${state.audio.length === 1 ? "track" : "tracks"}`;
+    el.audioList.innerHTML = state.audio.length ? state.audio.map(track => {
+      const url = state.client.storage.from(cfg.publicBucket).getPublicUrl(track.storage_path).data.publicUrl;
+      return `<article class="audio-row"><div class="audio-thumb">♫</div><div><strong>${esc(track.title)}</strong><small>${esc(audioScopeLabel(track))} · ${track.published ? "Published" : "Draft"}${track.featured ? " · Featured" : ""}</small><audio controls preload="metadata" src="${esc(url)}"></audio></div><div class="row-actions"><button type="button" data-audio-action="feature" data-id="${track.id}">${track.featured ? "Unfeature" : "Feature"}</button><button type="button" data-audio-action="publish" data-id="${track.id}">${track.published ? "Unpublish" : "Publish"}</button><button class="danger" type="button" data-audio-action="delete" data-id="${track.id}">Delete</button></div></article>`;
+    }).join("") : '<div class="admin-card"><h3>No audio yet</h3><p>Upload the book song to activate the public player.</p></div>';
+    $$('[data-audio-action]', el.audioList).forEach(button => button.addEventListener("click", () => handleAudioAction(button.dataset.audioAction, button.dataset.id)));
+  }
+
+  async function uploadAudio(event) {
+    event.preventDefault();
+    const form = new FormData(el.audioForm);
+    const file = form.get("file");
+    if (!(file instanceof File) || !file.size) return;
+    if (file.size > 35 * 1024 * 1024) { el.audioStatus.textContent = "Please keep audio files below 35 MB."; return; }
+    const scopeType = form.get("scope_type");
+    const featured = form.get("featured") === "true";
+    const path = `audio/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+    el.audioStatus.textContent = "Uploading audio…";
+    $("button[type=submit]", el.audioForm).disabled = true;
+    saving("Uploading audio…");
+    try {
+      const upload = await state.client.storage.from(cfg.publicBucket).upload(path, file, { contentType:file.type || "audio/mpeg", cacheControl:"3600", upsert:false });
+      if (upload.error) throw upload.error;
+      if (featured) {
+        const { error } = await state.client.from("qaj_yh_audio_tracks").update({ featured:false }).eq("scope_type", scopeType);
+        if (error) throw error;
+      }
+      const payload = {
+        title:String(form.get("title") || "").trim(), description:String(form.get("description") || "").trim(), scope_type:scopeType,
+        scope_id:scopeType === "book" ? null : String(form.get("scope_id") || ""), storage_path:path, original_file_name:file.name,
+        mime_type:file.type || "audio/mpeg", size_bytes:file.size, featured, published:form.get("published") === "true", sort_order:Date.now(), created_by:state.user.id
+      };
+      const insert = await state.client.from("qaj_yh_audio_tracks").insert(payload).select().single();
+      if (insert.error) { await state.client.storage.from(cfg.publicBucket).remove([path]); throw insert.error; }
+      state.audio = [insert.data, ...state.audio.map(track => featured && track.scope_type === scopeType ? {...track, featured:false} : track)];
+      el.audioForm.reset();
+      renderAudioTargets();
+      renderAudio();
+      renderOverview();
+      el.audioStatus.textContent = "Audio uploaded successfully.";
+      saved();
+      toast("Audio uploaded.");
+    } catch (error) {
+      fail(error, "Audio upload failed.");
+      el.audioStatus.textContent = error.message || "Upload failed.";
+    } finally {
+      $("button[type=submit]", el.audioForm).disabled = false;
+    }
+  }
+
+  async function handleAudioAction(action, id) {
+    const track = state.audio.find(item => item.id === id);
+    if (!track) return;
+    try {
+      saving();
+      if (action === "delete") {
+        if (!confirm(`Delete “${track.title}” and its audio file?`)) return saved();
+        const storage = await state.client.storage.from(cfg.publicBucket).remove([track.storage_path]);
+        if (storage.error) throw storage.error;
+        const removal = await state.client.from("qaj_yh_audio_tracks").delete().eq("id", id);
+        if (removal.error) throw removal.error;
+        state.audio = state.audio.filter(item => item.id !== id);
+      } else if (action === "publish") {
+        const update = await state.client.from("qaj_yh_audio_tracks").update({ published:!track.published }).eq("id", id).select().single();
+        if (update.error) throw update.error;
+        state.audio = state.audio.map(item => item.id === id ? update.data : item);
+      } else if (action === "feature") {
+        if (!track.featured) {
+          const clear = await state.client.from("qaj_yh_audio_tracks").update({ featured:false }).eq("scope_type", track.scope_type);
+          if (clear.error) throw clear.error;
+        }
+        const update = await state.client.from("qaj_yh_audio_tracks").update({ featured:!track.featured }).eq("id", id).select().single();
+        if (update.error) throw update.error;
+        state.audio = state.audio.map(item => item.scope_type === track.scope_type ? {...item, featured:item.id === id ? update.data.featured : false} : item);
+      }
+      renderAudio(); renderOverview(); saved(); toast("Audio library updated.");
+    } catch (error) { fail(error, "Audio could not be updated."); }
+  }
+
+  function renderExperiences() {
+    const filter = el.experienceFilter.value;
+    const items = state.experiences.filter(item => filter === "all" || item.status === filter);
+    el.experienceRows.innerHTML = items.length ? items.map(item => {
+      const word = state.words.find(word => word.id === item.word_id);
+      const attachment = item.media_path || item.submission_path;
+      return `<tr><td><strong>${esc(item.contributor_name || "—")}</strong></td><td><span lang="ar" dir="rtl" style="font:700 20px var(--font-ar)">${esc(word?.arabic_word || "—")}</span><br><small>${esc(word?.english || "")}</small></td><td>${esc(String(item.description || "").slice(0, 120))}${String(item.description || "").length > 120 ? "…" : ""}</td><td>${attachment ? "Yes" : "No"}</td><td><span class="status-pill ${esc(item.status)}">${esc(item.status)}</span></td><td>${esc(formatDate(item.created_at))}</td><td><div class="row-actions">${item.status !== "approved" ? `<button class="primary" type="button" data-exp-action="approve" data-id="${item.id}">Approve</button>` : ""}<button type="button" data-exp-action="edit" data-id="${item.id}">Edit</button>${item.status !== "rejected" ? `<button type="button" data-exp-action="reject" data-id="${item.id}">Reject</button>` : ""}<button class="danger" type="button" data-exp-action="delete" data-id="${item.id}">Delete</button></div></td></tr>`;
+    }).join("") : '<tr><td colspan="7">No submissions match this filter.</td></tr>';
+    $$('[data-exp-action]', el.experienceRows).forEach(button => button.addEventListener("click", () => handleExperienceAction(button.dataset.expAction, button.dataset.id)));
+    renderOverview();
+  }
+
+  async function promoteSubmissionMedia(item) {
+    if (!item.submission_path) return item;
+    const download = await state.client.storage.from(cfg.submissionsBucket).download(item.submission_path);
+    if (download.error) throw download.error;
+    const publicPath = `experiences/${item.id}/${safeFileName(item.original_file_name || item.submission_path.split("/").pop())}`;
+    const upload = await state.client.storage.from(cfg.publicBucket).upload(publicPath, download.data, { contentType:item.media_mime || download.data.type || "application/octet-stream", cacheControl:"3600", upsert:false });
+    if (upload.error) throw upload.error;
+    const removal = await state.client.storage.from(cfg.submissionsBucket).remove([item.submission_path]);
+    if (removal.error) console.warn("Private submission file remained after promotion", removal.error);
+    return {...item, media_path:publicPath, submission_path:null};
+  }
+
+  async function updateExperience(id, payload) {
+    const result = await state.client.from("qaj_yh_experiences").update({...payload, reviewed_by:state.user.id, reviewed_at:new Date().toISOString(), updated_at:new Date().toISOString()}).eq("id", id).select().single();
+    if (result.error) throw result.error;
+    state.experiences = state.experiences.map(item => item.id === id ? result.data : item);
+    renderExperiences();
+    return result.data;
+  }
+
+  async function handleExperienceAction(action, id) {
+    let item = state.experiences.find(entry => entry.id === id);
+    if (!item) return;
+    try {
+      if (action === "edit") return openExperienceModal(item);
+      saving();
+      if (action === "approve") {
+        item = await promoteSubmissionMedia(item);
+        await updateExperience(id, { status:"approved", media_path:item.media_path || null, submission_path:item.submission_path || null });
+        toast("Experience approved and published.");
+      } else if (action === "reject") {
+        await updateExperience(id, { status:"rejected" });
+        toast("Experience rejected.");
+      } else if (action === "delete") {
+        if (!confirm("Permanently delete this submission and its attachment?")) return saved();
+        await removeExperienceMedia(item, false);
+        const deletion = await state.client.from("qaj_yh_experiences").delete().eq("id", id);
+        if (deletion.error) throw deletion.error;
+        state.experiences = state.experiences.filter(entry => entry.id !== id);
+        renderExperiences();
+        toast("Experience deleted.");
+      }
+      saved();
+    } catch (error) { fail(error, "The experience could not be updated."); }
+  }
+
+  async function 
