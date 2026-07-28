@@ -8,6 +8,7 @@ on:
       - 'tin-tech-packaging/**'
       - 'mako-site-source/**'
       - 'hi-line-auto/**'
+      - 'qaj-young-hearts/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -44,6 +45,7 @@ jobs:
           mkdir -p _site/nautical-naturals-brand
           mkdir -p _site/nautical-naturals
           mkdir -p _site/hi-line-auto
+          mkdir -p _site/qaj-young-hearts
 
           cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
           cp tin-tech-packaging/about.html _site/tin-tech-packaging/about.html
@@ -85,6 +87,16 @@ jobs:
           test -f _site/hi-line-auto/config.js
           grep -q 'gxxfxsvviigzwtkgiduv' _site/hi-line-auto/config.js
 
+          cp -R qaj-young-hearts/. _site/qaj-young-hearts/
+          test -f _site/qaj-young-hearts/index.html
+          test -f _site/qaj-young-hearts/admin.html
+          test -f _site/qaj-young-hearts/assets/config.js
+          test -f _site/qaj-young-hearts/assets/app-loader.js
+          test -f _site/qaj-young-hearts/assets/admin-loader.js
+          test -f _site/qaj-young-hearts/assets/style-loader.js
+          grep -q 'Quranic Arabic for Young Hearts' _site/qaj-young-hearts/index.html
+          grep -q 'zadxvmpgngwtpsmdkcod.supabase.co' _site/qaj-young-hearts/assets/config.js
+
           touch _site/.nojekyll
 
           cat > _site/index.html <<'HTML'
@@ -103,6 +115,7 @@ jobs:
           <body>
             <main>
               <h1>Public Brand Sites</h1>
+              <a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a>
               <a href="./hi-line-auto/">Hi-Line Auto</a>
               <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
               <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
