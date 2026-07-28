@@ -1,0 +1,80 @@
+
+/* QAJ Young Hearts V2.5 — optimize public experience images before upload */
+(() => {
+  "use strict";
+  const form = document.querySelector("#experienceForm");
+  const input = form?.querySelector('input[type="file"]');
+  const label = document.querySelector("#fileLabel");
+  if (!form || !input) return;
+
+  let toolsPromise = null;
+  function loadTools() {
+    if (window.QAJ_IMAGE_TOOLS) return Promise.resolve(window.QAJ_IMAGE_TOOLS);
+    if (toolsPromise) return toolsPromise;
+    toolsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = new URL("assets/image-tools.js", location.href).href;
+      script.onload = () => window.QAJ_IMAGE_TOOLS ? resolve(window.QAJ_IMAGE_TOOLS) : reject(new Error("Image optimizer did not start"));
+      script.onerror = () => reject(new Error("Image optimizer could not load"));
+      document.head.append(script);
+    });
+    return toolsPromise;
+  }
+
+  form.addEventListener("submit", async event => {
+    if (form.dataset.qajOptimized === "ready") {
+      delete form.dataset.qajOptimized;
+      return;
+    }
+
+    const file = input.files?.[0];
+    if (!file || !["image/jpeg","image/png","image/webp"].includes(file.type)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const submit = form.querySelector('button[type="submit"]');
+    const originalText = submit?.innerHTML || "Send for review";
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = "Optimizing image…";
+    }
+
+    try {
+      const tools = await loadTools();
+      const result = await tools.optimize(file, {
+        maxDimension: 1800,
+        targetBytes: 900 * 1024,
+        triggerBytes: 650 * 1024,
+        quality: .86,
+        minQuality: .58
+      });
+
+      if (result.changed) {
+        tools.putInInput(input, result.file);
+        if (label) {
+          label.textContent = `${result.file.name} · ${tools.formatBytes(result.optimizedBytes)} · ${result.savingsPercent}% smaller`;
+        }
+      }
+
+      if ((input.files?.[0]?.size || 0) > 6 * 1024 * 1024) {
+        throw new Error("This image is still above 6 MB after optimization. Please use a smaller image.");
+      }
+
+      form.dataset.qajOptimized = "ready";
+      form.requestSubmit(submit || undefined);
+    } catch (error) {
+      console.error(error);
+      const status = document.querySelector("#formStatus");
+      if (status) {
+        status.textContent = error.message || "The image could not be optimized.";
+        status.className = "form-status error";
+      }
+    } finally {
+      if (submit) {
+        submit.disabled = false;
+        submit.innerHTML = originalText;
+      }
+    }
+  }, true);
+})();

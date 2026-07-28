@@ -1,0 +1,68 @@
+
+/* QAJ Young Hearts V2.5 — default book illustrations on word cards */
+(() => {
+  "use strict";
+  const cfg = window.QAJ_CONFIG || {};
+  const grid = document.querySelector("#letterGrid");
+  if (!grid || !window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+
+  const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+    auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+  });
+  const imageMap = new Map();
+  let loading = false;
+
+  function publicUrl(path) {
+    return client.storage.from(cfg.publicBucket || "qaj-yh-media").getPublicUrl(path).data.publicUrl;
+  }
+
+  function applyImages() {
+    grid.querySelectorAll(".word-option[data-word-id]").forEach(button => {
+      const item = imageMap.get(button.dataset.wordId);
+      const existing = button.querySelector(".word-option-thumb");
+      if (!item?.image_path) {
+        existing?.remove();
+        button.classList.remove("has-book-image");
+        return;
+      }
+      if (existing?.dataset.path === item.image_path) return;
+      existing?.remove();
+      const thumb = document.createElement("span");
+      thumb.className = "word-option-thumb";
+      thumb.dataset.path = item.image_path;
+      const image = document.createElement("img");
+      image.loading = "lazy";
+      image.decoding = "async";
+      image.src = publicUrl(item.image_path);
+      image.alt = item.image_alt || "";
+      thumb.append(image);
+      button.prepend(thumb);
+      button.classList.add("has-book-image");
+    });
+  }
+
+  async function loadImages() {
+    if (loading) return;
+    loading = true;
+    try {
+      const { data, error } = await client
+        .from("qaj_yh_words")
+        .select("id,image_path,image_alt")
+        .eq("published", true);
+      if (error) throw error;
+      imageMap.clear();
+      (data || []).forEach(row => imageMap.set(row.id, row));
+      applyImages();
+    } catch (error) {
+      console.warn("Young Hearts word illustrations could not be loaded.", error);
+    } finally {
+      loading = false;
+    }
+  }
+
+  const observer = new MutationObserver(() => {
+    if (grid.querySelector(".word-option[data-word-id]")) applyImages();
+  });
+  observer.observe(grid, { childList:true, subtree:true });
+  loadImages();
+})();
