@@ -1,0 +1,88 @@
+
+/* QAJ Young Hearts V2.1 — compact, adjustable and reliable letter cards */
+:root{
+  --qaj-card-scale:.78;
+  --qaj-card-height:206px;
+  --qaj-card-min-width:180px;
+  --qaj-card-letter-size:72px;
+  --qaj-card-word-size:22px;
+  --qaj-card-padding:12px;
+}
+.letter-grid{
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--qaj-card-min-width)),1fr))!important;
+  gap:14px!important;
+  perspective:1200px;
+}
+.letter-card{
+  height:var(--qaj-card-height)!important;
+  min-height:var(--qaj-card-height)!important;
+  border-radius:22px!important;
+  transform:none!important;
+  transform-style:preserve-3d;
+  transition:transform .25s ease,filter .2s ease!important;
+}
+.letter-card:hover{transform:translateY(-4px)!important}
+.letter-card.is-open,.letter-card.is-open:hover{transform:translateY(-2px)!important}
+.card-face{
+  border-radius:22px!important;
+  transform-style:preserve-3d;
+  will-change:transform;
+  transition:transform .5s cubic-bezier(.2,.78,.2,1),opacity .2s ease!important;
+}
+.card-front{
+  z-index:2;
+  transform:rotateY(0deg);
+  padding:var(--qaj-card-padding)!important;
+}
+.card-back{
+  z-index:1;
+  transform:rotateY(180deg)!important;
+  padding:var(--qaj-card-padding)!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.letter-card.is-open .card-front{
+  z-index:1;
+  transform:rotateY(-180deg)!important;
+  pointer-events:none;
+}
+.letter-card.is-open .card-back{
+  z-index:2;
+  transform:rotateY(0deg)!important;
+  pointer-events:auto;
+}
+.card-front:before{inset:8px!important;border-radius:16px!important}
+.card-front:after{width:130px!important;height:130px!important;right:-48px!important;top:-42px!important}
+.card-number{font-size:9px!important}
+.card-letter{font-size:var(--qaj-card-letter-size)!important;padding-bottom:4px!important}
+.card-footer span{font-size:9px!important}
+.card-footer i{width:29px!important;height:29px!important;font-size:14px!important}
+.back-top{margin-bottom:8px!important}
+.mini-letter{width:38px!important;height:38px!important;border-radius:12px!important;font-size:24px!important}
+.back-top span{font-size:8px!important}
+.word-options{gap:6px!important}
+.word-option{
+  min-height:58px!important;
+  border-radius:13px!important;
+  padding:6px 9px!important;
+}
+.word-option .arabic{font-size:var(--qaj-card-word-size)!important;line-height:1.05!important}
+.word-option .english{font-size:9px!important}
+.word-option .arrow{width:25px!important;height:25px!important;font-size:11px!important}
+.loading-card{height:var(--qaj-card-height)!important;min-height:var(--qaj-card-height)!important;border-radius:22px!important}
+
+.qaj-card-size-control{padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7f9f7}
+.qaj-card-size-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:13px}
+.qaj-card-size-row input{width:100%;accent-color:var(--teal)}
+.qaj-card-size-row output{min-width:52px;padding:7px 9px;border-radius:10px;background:#fff;color:var(--teal);font-size:12px;font-weight:800;text-align:center;border:1px solid var(--line)}
+.qaj-card-size-control small{display:block;margin-top:7px;color:var(--muted);font-size:10px;text-transform:none;letter-spacing:normal;font-weight:500}
+
+@media (max-width:760px){
+  .letter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .letter-card,.loading-card{height:max(var(--qaj-card-height),205px)!important;min-height:max(var(--qaj-card-height),205px)!important}
+}
+@media (max-width:360px){
+  .letter-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .word-option{padding:5px 7px!important}
+  .word-option .arrow{display:none!important}
+}
