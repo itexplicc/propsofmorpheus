@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Reassemble and validate JavaScript
+      - name: Validate JavaScript
         shell: bash
         run: |
           set -euo pipefail
@@ -28,11 +28,10 @@ jobs:
           node --check qaj-young-hearts/assets/admin-loader.js
           node --check qaj-young-hearts/assets/style-loader.js
 
-      - name: Validate HTML and release assets
+      - name: Validate HTML
         shell: bash
         run: |
           set -euo pipefail
-
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
@@ -48,6 +47,10 @@ jobs:
                   raise SystemExit(f'{path} is not a complete HTML document')
           PY
 
+      - name: Validate required files
+        shell: bash
+        run: |
+          set -euo pipefail
           required=(
             qaj-young-hearts/assets/config.js
             qaj-young-hearts/assets/styles.1.part
@@ -63,21 +66,28 @@ jobs:
             qaj-young-hearts/assets/icons/icon-192.png
             qaj-young-hearts/site.webmanifest
           )
-
           for path in "${required[@]}"; do
             test -s "$path" || { echo "Missing or empty release file: $path" >&2; exit 1; }
           done
 
-          test "$(head -c 4 qaj-young-hearts/qaj-book-cover.webp)" = "RIFF" || {
+      - name: Validate official cover
+        shell: bash
+        run: |
+          set -euo pipefail
+          cover=qaj-young-hearts/qaj-book-cover.webp
+          test "$(head -c 4 "$cover")" = "RIFF" || {
             echo 'Official cover is not a WebP RIFF container' >&2
             exit 1
           }
-
-          test "$(stat -c%s qaj-young-hearts/qaj-book-cover.webp)" -gt 20000 || {
+          test "$(stat -c%s "$cover")" -gt 20000 || {
             echo 'Official cover file is suspiciously small' >&2
             exit 1
           }
 
+      - name: Validate icon binaries
+        shell: bash
+        run: |
+          set -euo pipefail
           for icon in \
             qaj-young-hearts/assets/icons/favicon-32.png \
             qaj-young-hearts/assets/icons/apple-touch-icon.png \
@@ -89,4 +99,5 @@ jobs:
             }
           done
 
-          echo 'QAJ Young Hearts release validated'
+      - name: Release validated
+        run: echo 'QAJ Young Hearts release validated'
