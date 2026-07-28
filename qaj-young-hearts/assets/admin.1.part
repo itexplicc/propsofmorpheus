@@ -1,0 +1,221 @@
+(() => {
+  "use strict";
+
+  const cfg = window.QAJ_CONFIG || {};
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const esc = (value = "") => String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+  const lines = value => String(value || "").split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+  const toLines = value => Array.isArray(value) ? value.join("\n") : "";
+  const safeFileName = name => String(name || "file").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-110) || "file";
+  const formatDate = value => value ? new Intl.DateTimeFormat(undefined, { dateStyle:"medium", timeStyle:"short" }).format(new Date(value)) : "";
+  const titleForView = {
+    overview:["Overview","The health of your learning experience."],
+    content:["Book content","Edit the complete learning journey."],
+    audio:["Song & audio","Manage the sound of the book."],
+    experiences:["Family experiences","Review and curate community submissions."],
+    settings:["Site settings","Control the public presentation."],
+    export:["Backup & export","Keep your content portable and safe."]
+  };
+
+  const el = {
+    login: $("#adminLogin"), app: $("#adminApp"), authForm: $("#authForm"), authMessage: $("#authMessage"), authSubmit: $("#authSubmit"),
+    authTitle: $("#authTitle"), authDescription: $("#authDescription"), sidebar: $("#adminSidebar"), mobileMenu: $("#mobileMenuBtn"),
+    viewTitle: $("#viewTitle"), viewSubtitle: $("#viewSubtitle"), saveState: $("#saveState"), toast: $("#toastRegion"),
+    adminName: $("#adminName"), adminEmail: $("#adminEmail"), signOut: $("#signOutBtn"),
+    letterList: $("#adminLetterList"), wordList: $("#adminWordList"), wordEditor: $("#wordEditor"),
+    audioForm: $("#audioForm"), audioScopeType: $("#audioScopeType"), audioScopeTargetWrap: $("#audioScopeTargetWrap"), audioScopeTarget: $("#audioScopeTarget"), audioList: $("#audioList"), audioCount: $("#audioCount"), audioStatus: $("#audioStatus"),
+    experienceRows: $("#experienceRows"), experienceFilter: $("#experienceFilter"), experienceModal: $("#experienceModal"), experienceEditForm: $("#experienceEditForm"), mediaPreview: $("#experienceMediaPreview"), removeMedia: $("#removeMediaBtn"),
+    settingsForm: $("#settingsForm"), exportBtn: $("#exportBtn"), pendingNavCount: $("#pendingNavCount")
+  };
+
+  const state = {
+    client: null, authMode: "signin", user: null, profile: null,
+    letters: [], words: [], experiences: [], audio: [], settings: {},
+    selectedLetterId: "", selectedWordId: "", editingExperienceId: ""
+  };
+
+  function toast(message, type = "info") {
+    const node = document.createElement("div");
+    node.className = `toast ${type === "error" ? "error" : ""}`;
+    node.textContent = message;
+    el.toast.append(node);
+    setTimeout(() => node.remove(), 3800);
+  }
+
+  function saving(label = "Saving…") {
+    el.saveState.textContent = label;
+    el.saveState.style.opacity = ".65";
+  }
+
+  function saved() {
+    el.saveState.textContent = "All changes saved";
+    el.saveState.style.opacity = "1";
+  }
+
+  function fail(error, publicMessage = "Something went wrong") {
+    console.error(error);
+    saved();
+    toast(publicMessage, "error");
+  }
+
+  function initClient() {
+    if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) throw new Error("Supabase configuration is missing.");
+    state.client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+      auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+    });
+  }
+
+  function setAuthMode(mode) {
+    state.authMode = mode;
+    $$('[data-auth-mode]').forEach(button => button.classList.toggle("is-active", button.dataset.authMode === mode));
+    const signup = mode === "signup";
+    el.authTitle.textContent = signup ? "Create the owner account" : "Welcome back";
+    el.authDescription.textContent = signup ? "Use the pre-approved owner email to activate the studio." : "Sign in with your approved educator account.";
+    el.authSubmit.innerHTML = signup ? 'Create secure account <span aria-hidden="true">→</span>' : 'Enter studio <span aria-hidden="true">→</span>';
+    $("input[name=password]", el.authForm).autocomplete = signup ? "new-password" : "current-password";
+    el.authMessage.textContent = "";
+  }
+
+  async function handleAuth(event) {
+    event.preventDefault();
+    const form = new FormData(el.authForm);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+    el.authSubmit.disabled = true;
+    el.authMessage.textContent = state.authMode === "signup" ? "Creating your protected studio account…" : "Checking your account…";
+    try {
+      if (state.authMode === "signup") {
+        const { data, error } = await state.client.auth.signUp({ email, password, options:{ data:{ display_name:"Young Hearts Owner" } } });
+        if (error) throw error;
+        if (!data.session) {
+          el.authMessage.textContent = "Account created. Check your email to confirm it, then return and sign in.";
+          return;
+        }
+        await checkAccess(data.user);
+      } else {
+        const { data, error } = await state.client.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await checkAccess(data.user);
+      }
+    } catch (error) {
+      console.error(error);
+      el.authMessage.textContent = error.message || "Access failed. Check the details and try again.";
+    } finally {
+      el.authSubmit.disabled = false;
+    }
+  }
+
+  async function checkAccess(user) {
+    if (!user) return showLogin();
+    const { data, error } = await state.client.from("qaj_yh_admin_profiles").select("user_id,display_name,role,active").eq("user_id", user.id).maybeSingle();
+    if (error) throw error;
+    if (!data?.active) {
+      await state.client.auth.signOut();
+      showLogin();
+      el.authMessage.textContent = "This account is not approved for the educator studio. Use the pre-approved owner email or ask an administrator.";
+      return;
+    }
+    state.user = user;
+    state.profile = data;
+    el.adminName.textContent = data.display_name || "Administrator";
+    el.adminEmail.textContent = user.email || "";
+    el.login.hidden = true;
+    el.app.hidden = false;
+    await loadEverything();
+  }
+
+  function showLogin() {
+    state.user = null;
+    state.profile = null;
+    el.app.hidden = true;
+    el.login.hidden = false;
+  }
+
+  async function loadEverything() {
+    saving("Loading studio…");
+    const [lettersRes, wordsRes, expRes, audioRes, settingsRes] = await Promise.all([
+      state.client.from("qaj_yh_letters").select("*").order("position"),
+      state.client.from("qaj_yh_words").select("*").order("position"),
+      state.client.from("qaj_yh_experiences").select("*").order("created_at", { ascending:false }),
+      state.client.from("qaj_yh_audio_tracks").select("*").order("sort_order"),
+      state.client.from("qaj_yh_site_settings").select("key,value,is_public")
+    ]);
+    const error = lettersRes.error || wordsRes.error || expRes.error || audioRes.error || settingsRes.error;
+    if (error) throw error;
+    state.letters = lettersRes.data || [];
+    state.words = wordsRes.data || [];
+    state.experiences = expRes.data || [];
+    state.audio = audioRes.data || [];
+    state.settings = Object.fromEntries((settingsRes.data || []).map(row => [row.key, row.value]));
+    state.selectedLetterId ||= state.letters[0]?.id || "";
+    state.selectedWordId ||= state.words.find(word => word.letter_id === state.selectedLetterId)?.id || "";
+    renderAll();
+    saved();
+  }
+
+  function renderAll() {
+    renderOverview();
+    renderContentLists();
+    populateWordEditor();
+    renderAudioTargets();
+    renderAudio();
+    renderExperiences();
+    populateSettings();
+  }
+
+  function renderOverview() {
+    const pending = state.experiences.filter(item => item.status === "pending");
+    const approved = state.experiences.filter(item => item.status === "approved");
+    $("#statWords").textContent = state.words.filter(item => item.published).length;
+    $("#statPending").textContent = pending.length;
+    $("#statApproved").textContent = approved.length;
+    $("#statAudio").textContent = state.audio.length;
+    el.pendingNavCount.textContent = pending.length ? `(${pending.length})` : "";
+
+    const latest = pending.slice(0, 5);
+    $("#latestExperiences").innerHTML = latest.length ? latest.map(item => {
+      const word = state.words.find(word => word.id === item.word_id);
+      return `<div class="activity-row"><span class="dot"></span><div><strong>${esc(item.contributor_name)}</strong><small>${esc(word?.arabic_word || "Unknown word")} · ${esc(String(item.description || "").slice(0, 80))}</small></div><time>${esc(formatDate(item.created_at))}</time></div>`;
+    }).join("") : '<div class="activity-row"><span class="dot"></span><div><strong>Nothing waiting</strong><small>All family submissions have been reviewed.</small></div></div>';
+
+    const requiredSettings = ["site_title","site_subtitle"];
+    const checks = [
+      [state.words.every(word => word.purpose && word.instructions), "Every word has core guidance"],
+      [state.words.every(word => Array.isArray(word.activity) && word.activity.length), "Every word has activity steps"],
+      [state.audio.some(track => track.scope_type === "book" && track.published), "A published book song is ready"],
+      [requiredSettings.every(key => Boolean(state.settings[key])), "Public introduction is complete"]
+    ];
+    const readiness = Math.round(checks.filter(([ok]) => ok).length / checks.length * 100);
+    $("#readinessPercent").textContent = `${readiness}%`;
+    $("#readinessList").innerHTML = checks.map(([ok, label]) => `<div class="activity-row"><span class="dot" style="background:${ok ? "#3a8c68" : "#c79a3b"}"></span><div><strong>${esc(label)}</strong><small>${ok ? "Ready" : "Needs attention"}</small></div></div>`).join("");
+  }
+
+  function renderContentLists() {
+    el.letterList.innerHTML = state.letters.map(letter => `<button type="button" data-letter-id="${letter.id}" class="${state.selectedLetterId === letter.id ? "is-active" : ""}"><span class="list-arabic" lang="ar" dir="rtl">${esc(letter.code)}</span><span>Letter ${esc(letter.code)}</span></button>`).join("");
+    const words = state.words.filter(word => word.letter_id === state.selectedLetterId);
+    el.wordList.innerHTML = words.map(word => `<button type="button" data-word-id="${word.id}" class="${state.selectedWordId === word.id ? "is-active" : ""}"><strong lang="ar" dir="rtl">${esc(word.arabic_word)}</strong><small>${esc(word.english)}</small></button>`).join("");
+    $$('[data-letter-id]', el.letterList).forEach(button => button.addEventListener("click", () => {
+      state.selectedLetterId = button.dataset.letterId;
+      state.selectedWordId = state.words.find(word => word.letter_id === state.selectedLetterId)?.id || "";
+      renderContentLists();
+      populateWordEditor();
+    }));
+    $$('[data-word-id]', el.wordList).forEach(button => button.addEventListener("click", () => {
+      state.selectedWordId = button.dataset.wordId;
+      renderContentLists();
+      populateWordEditor();
+    }));
+  }
+
+  function populateWordEditor() {
+    const word = state.words.find(item => item.id === state.selectedWordId);
+    if (!word) return;
+    const f = el.wordEditor.elements;
+    f.id.value = word.id;
+    f.arabic_word.value = word.arabic_word || "";
+    f.english.value = word.english || "";
+    f.purpose.value = word.purpose || "";
+    f.instructions.value = word.instructions || "";
+    f.prep.value = toLines(word.prep);
+    f.warmup
