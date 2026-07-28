@@ -49,10 +49,10 @@ jobs:
               'qaj-young-hearts/assets/admin.1.part',
               'qaj-young-hearts/assets/admin.3.part',
               'qaj-young-hearts/qaj-book-cover.webp',
-              'qaj-young-hearts/favicon.svg',
-              'qaj-young-hearts/favicon-32.png',
-              'qaj-young-hearts/apple-touch-icon.png',
-              'qaj-young-hearts/icon-192.png',
+              'qaj-young-hearts/assets/icons/favicon.svg',
+              'qaj-young-hearts/assets/icons/favicon-32.png',
+              'qaj-young-hearts/assets/icons/apple-touch-icon.png',
+              'qaj-young-hearts/assets/icons/icon-192.png',
               'qaj-young-hearts/site.webmanifest',
           ]
           for path in required:
@@ -63,6 +63,14 @@ jobs:
           cover = Path('qaj-young-hearts/qaj-book-cover.webp')
           assert cover.stat().st_size > 20_000, 'Official cover binary is suspiciously small or missing'
           assert cover.read_bytes()[:4] == b'RIFF', 'Official cover is not a valid WebP container'
+
+          for icon_path in (
+              'qaj-young-hearts/assets/icons/favicon-32.png',
+              'qaj-young-hearts/assets/icons/apple-touch-icon.png',
+              'qaj-young-hearts/assets/icons/icon-192.png',
+          ):
+              icon = Path(icon_path)
+              assert icon.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', f'{icon_path} is not a valid PNG'
 
           print('QAJ Young Hearts release validated')
           PY
