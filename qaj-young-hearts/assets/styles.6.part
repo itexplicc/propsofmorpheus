@@ -1,0 +1,186 @@
+
+/* QAJ Young Hearts V2.2 — mobile lesson experience */
+@media (max-width:640px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body.modal-open{overflow:hidden!important}
+  .word-modal{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    height:100dvh!important;
+    padding:0!important;
+    display:block!important;
+    overflow:hidden!important;
+  }
+  .word-modal[hidden]{display:none!important}
+  .modal-backdrop{display:none!important}
+  .word-dialog{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .modal-close{
+    top:10px!important;
+    right:10px!important;
+    width:40px!important;
+    height:40px!important;
+    font-size:23px!important;
+  }
+  .dialog-hero{
+    flex:0 0 auto!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:16px 52px 15px 16px!important;
+    display:grid!important;
+    grid-template-columns:64px minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;
+    align-items:center!important;
+    gap:10px 12px!important;
+    overflow:hidden!important;
+  }
+  .dialog-letter{
+    width:62px!important;
+    height:62px!important;
+    border-radius:19px!important;
+    font-size:42px!important;
+  }
+  .dialog-title-wrap{
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+  .dialog-kicker{font-size:8px!important;letter-spacing:.12em!important}
+  .dialog-title-wrap h2{
+    max-width:100%!important;
+    margin:0!important;
+    font-size:35px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:right!important;
+  }
+  .dialog-title-wrap p{
+    margin-top:4px!important;
+    font-size:14px!important;
+    line-height:1.25!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .mark-button{
+    grid-column:1/-1!important;
+    min-height:38px!important;
+    width:max-content!important;
+    max-width:100%!important;
+    padding:0 14px!important;
+    font-size:11px!important;
+  }
+  .dialog-nav{
+    flex:0 0 auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    display:grid!important;
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:6px!important;
+    padding:8px!important;
+    overflow:visible!important;
+    border-bottom:1px solid var(--line)!important;
+  }
+  .dialog-tab{
+    width:100%!important;
+    min-width:0!important;
+    min-height:40px!important;
+    padding:7px 5px!important;
+    white-space:normal!important;
+    line-height:1.12!important;
+    font-size:10px!important;
+    text-align:center!important;
+    border-radius:11px!important;
+  }
+  .dialog-tab:nth-child(-n+3){grid-column:span 2!important}
+  .dialog-tab:nth-child(n+4){grid-column:span 3!important}
+  .dialog-scroll{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:15px 13px calc(28px + env(safe-area-inset-bottom))!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+  }
+  .dialog-panel,
+  .dialog-panel>*{width:100%!important;max-width:100%!important;min-width:0!important}
+  .content-grid.two-col,
+  .heart-grid,
+  .share-layout{grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  .purpose-banner{
+    padding:15px!important;
+    gap:11px!important;
+    border-radius:17px!important;
+  }
+  .purpose-banner>span{width:38px!important;height:38px!important;border-radius:12px!important}
+  .purpose-banner p{font-size:15px!important;line-height:1.4!important}
+  .content-card{
+    width:100%!important;
+    min-width:0!important;
+    padding:16px!important;
+    gap:12px!important;
+    border-radius:17px!important;
+  }
+  .content-card>div{min-width:0!important;max-width:100%!important}
+  .content-card p,
+  .content-card li,
+  .story-card p,
+  .share-intro p,
+  .privacy-note p,
+  .experience-card p{
+    max-width:100%!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+  .card-icon{width:38px!important;height:38px!important;border-radius:12px!important}
+  .story-card{padding:20px!important;border-radius:18px!important}
+  .story-card p{font-size:16px!important;line-height:1.55!important}
+  .ayah-card,.dua-card{padding:18px!important;border-radius:17px!important}
+  .panel-heading{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:12px!important;
+  }
+  .panel-heading h3{font-size:23px!important;line-height:1.15!important}
+  .panel-heading .soft-button{width:max-content!important;max-width:100%!important}
+  .experience-grid{grid-template-columns:minmax(0,1fr)!important}
+  .share-intro{
+    width:100%!important;
+    min-width:0!important;
+    padding:19px!important;
+    border-radius:19px!important;
+    overflow:hidden!important;
+  }
+  .share-intro h3{font-size:29px!important;line-height:1.02!important}
+  .share-form{min-width:0!important}
+  .share-form label{min-width:0!important}
+  .share-form input[type=text],
+  .share-form textarea{font-size:16px!important;max-width:100%!important}
+  .file-drop{width:100%!important;min-width:0!important}
+}
+
+/* Password-only admin entry */
+.admin-page.qaj-password-only .auth-tabs,
+.admin-page.qaj-password-only .login-footnote,
+.admin-page.qaj-password-only .qaj-hidden-admin-email{display:none!important}
+.admin-page.qaj-password-only .login-card{max-width:400px}
+.admin-page.qaj-password-only .auth-form{gap:16px}
+.admin-page.qaj-password-only .auth-form input[type=password]{font-size:18px;letter-spacing:.08em}
