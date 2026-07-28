@@ -1,0 +1,149 @@
+ mediaUrlFor(item) {
+    if (item.media_path) return state.client.storage.from(cfg.publicBucket).getPublicUrl(item.media_path).data.publicUrl;
+    if (item.submission_path) {
+      const { data, error } = await state.client.storage.from(cfg.submissionsBucket).createSignedUrl(item.submission_path, 600);
+      if (error) throw error;
+      return data.signedUrl;
+    }
+    return "";
+  }
+
+  async function openExperienceModal(item) {
+    state.editingExperienceId = item.id;
+    el.experienceEditForm.elements.id.value = item.id;
+    el.experienceEditForm.elements.contributor_name.value = item.contributor_name || "";
+    el.experienceEditForm.elements.description.value = item.description || "";
+    el.experienceEditForm.elements.status.value = item.status || "pending";
+    el.mediaPreview.textContent = "Loading attachment…";
+    el.experienceModal.hidden = false;
+    try {
+      const url = await mediaUrlFor(item);
+      if (!url) el.mediaPreview.textContent = "No attachment";
+      else if (item.media_mime?.startsWith("image/")) el.mediaPreview.innerHTML = `<img src="${esc(url)}" alt="Submitted experience attachment">`;
+      else if (item.media_mime?.startsWith("video/")) el.mediaPreview.innerHTML = `<video controls src="${esc(url)}"></video>`;
+      else el.mediaPreview.innerHTML = `<a href="${esc(url)}" target="_blank" rel="noopener">Open attachment ↗</a>`;
+      el.removeMedia.hidden = !url;
+    } catch (error) {
+      console.error(error);
+      el.mediaPreview.textContent = "Attachment could not be previewed.";
+    }
+  }
+
+  async function saveExperienceEdit(event) {
+    event.preventDefault();
+    const f = el.experienceEditForm.elements;
+    let item = state.experiences.find(entry => entry.id === f.id.value);
+    if (!item) return;
+    try {
+      saving();
+      if (f.status.value === "approved") item = await promoteSubmissionMedia(item);
+      await updateExperience(item.id, {
+        contributor_name:f.contributor_name.value.trim(), description:f.description.value.trim(), status:f.status.value,
+        media_path:item.media_path || null, submission_path:item.submission_path || null
+      });
+      el.experienceModal.hidden = true;
+      saved(); toast("Experience saved.");
+    } catch (error) { fail(error, "Experience edit failed."); }
+  }
+
+  async function removeExperienceMedia(item, updateRow = true) {
+    if (item.media_path) {
+      const result = await state.client.storage.from(cfg.publicBucket).remove([item.media_path]);
+      if (result.error) throw result.error;
+    }
+    if (item.submission_path) {
+      const result = await state.client.storage.from(cfg.submissionsBucket).remove([item.submission_path]);
+      if (result.error) throw result.error;
+    }
+    if (updateRow) return updateExperience(item.id, { media_path:null, submission_path:null, media_mime:null, original_file_name:null });
+  }
+
+  async function handleRemoveMedia() {
+    const item = state.experiences.find(entry => entry.id === state.editingExperienceId);
+    if (!item || (!item.media_path && !item.submission_path)) return;
+    if (!confirm("Remove this attachment permanently? The written experience will remain.")) return;
+    try {
+      saving();
+      await removeExperienceMedia(item, true);
+      el.mediaPreview.textContent = "No attachment";
+      el.removeMedia.hidden = true;
+      saved(); toast("Attachment removed.");
+    } catch (error) { fail(error, "Attachment could not be removed."); }
+  }
+
+  function populateSettings() {
+    const f = el.settingsForm.elements;
+    f.site_title.value = state.settings.site_title || "Quranic Arabic for Young Hearts";
+    f.site_subtitle.value = state.settings.site_subtitle || "";
+    f.song_heading.value = state.settings.song_heading || "Listen, sing, remember";
+    f.song_description.value = state.settings.song_description || "A special song for this learning journey.";
+  }
+
+  async function saveSettings(event) {
+    event.preventDefault();
+    const form = new FormData(el.settingsForm);
+    const entries = ["site_title","site_subtitle","song_heading","song_description"].map(key => ({ key, value:String(form.get(key) || "").trim(), is_public:true, updated_by:state.user.id, updated_at:new Date().toISOString() }));
+    saving();
+    const { error } = await state.client.from("qaj_yh_site_settings").upsert(entries, { onConflict:"key" });
+    if (error) return fail(error, "Site settings could not be saved.");
+    entries.forEach(entry => state.settings[entry.key] = entry.value);
+    renderOverview(); saved(); toast("Public settings saved.");
+  }
+
+  async function exportData() {
+    const payload = {
+      exported_at:new Date().toISOString(), version:cfg.version,
+      letters:state.letters, words:state.words, settings:state.settings,
+      audio_tracks:state.audio.map(({storage_path, ...track}) => ({...track, storage_path})),
+      experiences:state.experiences
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = `qaj-young-hearts-backup-${new Date().toISOString().slice(0,10)}.json`; link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function switchView(view) {
+    $$(".admin-nav button").forEach(button => button.classList.toggle("is-active", button.dataset.view === view));
+    $$(".admin-view").forEach(section => section.classList.toggle("is-active", section.dataset.adminView === view));
+    el.viewTitle.textContent = titleForView[view][0];
+    el.viewSubtitle.textContent = titleForView[view][1];
+    el.sidebar.classList.remove("is-open");
+  }
+
+  function bindEvents() {
+    $$('[data-auth-mode]').forEach(button => button.addEventListener("click", () => setAuthMode(button.dataset.authMode)));
+    el.authForm.addEventListener("submit", handleAuth);
+    el.signOut.addEventListener("click", async () => { await state.client.auth.signOut(); showLogin(); });
+    $$(".admin-nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+    $$('[data-jump]').forEach(button => button.addEventListener("click", () => switchView(button.dataset.jump)));
+    el.mobileMenu.addEventListener("click", () => el.sidebar.classList.toggle("is-open"));
+    el.wordEditor.addEventListener("submit", saveWord);
+    el.audioScopeType.addEventListener("change", renderAudioTargets);
+    el.audioForm.addEventListener("submit", uploadAudio);
+    el.experienceFilter.addEventListener("change", renderExperiences);
+    el.experienceEditForm.addEventListener("submit", saveExperienceEdit);
+    el.removeMedia.addEventListener("click", handleRemoveMedia);
+    $$('[data-close-admin-modal]').forEach(button => button.addEventListener("click", () => el.experienceModal.hidden = true));
+    el.experienceModal.addEventListener("click", event => { if (event.target === el.experienceModal) el.experienceModal.hidden = true; });
+    el.settingsForm.addEventListener("submit", saveSettings);
+    el.exportBtn.addEventListener("click", exportData);
+  }
+
+  async function init() {
+    initClient();
+    bindEvents();
+    const { data:{ session } } = await state.client.auth.getSession();
+    if (session?.user) {
+      try { await checkAccess(session.user); }
+      catch (error) { console.error(error); showLogin(); el.authMessage.textContent = "The studio could not verify this account."; }
+    } else showLogin();
+  }
+
+  init().catch(error => {
+    console.error(error);
+    showLogin();
+    el.authMessage.textContent = "The educator studio could not connect to its backend.";
+  });
+})();
