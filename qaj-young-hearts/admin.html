@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#092f2e">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Young Hearts Educator Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>html:not(.qaj-styled) body{opacity:0}body{transition:opacity .18s ease}</style>
+  <script src="assets/style-loader.js"></script>
+</head>
+<body class="admin-page">
+  <main class="admin-shell">
+    <section class="admin-login" id="adminLogin">
+      <div class="login-art">
+        <a class="brand" href="index.html">
+          <span class="brand-mark" lang="ar" dir="rtl">ق</span>
+          <span><strong>Young Hearts</strong><small>Educator studio</small></span>
+        </a>
+        <div class="login-art-copy">
+          <span class="eyebrow light"><i></i> Behind every beautiful lesson</span>
+          <h1>Shape the book.<br><em>Guide the hearts.</em></h1>
+          <p>Manage every word, activity, song, family submission, and visual detail from one calm workspace.</p>
+        </div>
+        <div class="login-quote"><strong>Built for teachers, not technicians.</strong><small>Simple editing. Safe approvals. No code needed.</small></div>
+      </div>
+
+      <div class="login-panel">
+        <div class="login-card">
+          <a class="brand" href="index.html">
+            <span class="brand-mark" lang="ar" dir="rtl">ق</span>
+            <span><strong>Young Hearts</strong><small>Educator studio</small></span>
+          </a>
+          <h2 id="authTitle">Welcome back</h2>
+          <p id="authDescription">Sign in with your approved educator account.</p>
+          <div class="auth-tabs" role="tablist" aria-label="Account access">
+            <button class="is-active" type="button" data-auth-mode="signin">Sign in</button>
+            <button type="button" data-auth-mode="signup">First-time setup</button>
+          </div>
+          <form class="auth-form" id="authForm">
+            <label>Email address<input type="email" name="email" autocomplete="email" required></label>
+            <label>Password<input type="password" name="password" minlength="8" autocomplete="current-password" required></label>
+            <button class="primary-button" type="submit" id="authSubmit">Enter studio <span aria-hidden="true">→</span></button>
+            <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
+          </form>
+          <p class="login-footnote">The first-time setup works only for the pre-approved owner email. Other accounts require an administrator.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-app" id="adminApp" hidden>
+      <aside class="admin-sidebar" id="adminSidebar">
+        <a class="brand admin-brand" href="index.html">
+          <span class="brand-mark" lang="ar" dir="rtl">ق</span>
+          <span><strong>Young Hearts</strong><small>Educator studio</small></span>
+        </a>
+        <nav class="admin-nav" aria-label="Studio sections">
+          <button class="is-active" type="button" data-view="overview"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm10 7h6V11h-6v9ZM4 20h6v-3H4v3Zm10-13h6V4h-6v3Z"/></svg>Overview</button>
+          <button type="button" data-view="content"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Zm0 0V19"/></svg>Book content</button>
+          <button type="button" data-view="audio"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13M9 9l10-2M6.5 21C8.43 21 10 19.88 10 18.5S8.43 16 6.5 16 3 17.12 3 18.5 4.57 21 6.5 21Zm10-2c1.93 0 3.5-1.12 3.5-2.5S18.43 14 16.5 14 13 15.12 13 16.5s1.57 2.5 3.5 2.5Z"/></svg>Song &amp; audio</button>
+          <button type="button" data-view="experiences"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5Zm4 4h8M8 13h5"/></svg>Experiences <span id="pendingNavCount"></span></button>
+          <button type="button" data-view="settings"><svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Zm7.5-3.5 1.5-1.2-2-3.4-1.9.8a8 8 0 0 0-1.6-.9L15.2 5h-4l-.3 2.3a8 8 0 0 0-1.6.9l-1.9-.8-2 3.4L7 12a8.9 8.9 0 0 0 0 1.8L5.4 15l2 3.4 1.9-.8a8 8 0 0 0 1.6.9l.3 2.3h4l.3-2.3a8 8 0 0 0 1.6-.9l1.9.8 2-3.4-1.5-1.2a8.9 8.9 0 0 0 0-1.8Z"/></svg>Site settings</button>
+          <button type="button" data-view="export"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg>Backup &amp; export</button>
+        </nav>
+        <div class="admin-user">
+          <strong id="adminName">Administrator</strong><small id="adminEmail"></small>
+          <button id="signOutBtn" type="button">Sign out</button>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <header class="admin-topbar">
+          <div><button class="mobile-admin-menu" id="mobileMenuBtn" type="button" aria-label="Open studio menu">☰</button><div><h1 id="viewTitle">Overview</h1><p id="viewSubtitle">The health of your learning experience.</p></div></div>
+          <div class="admin-top-actions"><a class="soft-button" href="index.html" target="_blank" rel="noopener">Preview site ↗</a><span class="soft-button" id="saveState">All changes saved</span></div>
+        </header>
+
+        <div class="admin-content">
+          <section class="admin-view is-active" data-admin-view="overview">
+            <div class="admin-heading"><div><h2>Good to see you.</h2><p>Here is what is happening across Young Hearts.</p></div></div>
+            <div class="stat-grid">
+              <article class="stat-card"><small>Published words</small><strong id="statWords">—</strong><span>Across the Arabic alphabet</span></article>
+              <article class="stat-card"><small>Pending reviews</small><strong id="statPending">—</strong><span>Family experiences waiting</span></article>
+              <article class="stat-card"><small>Approved stories</small><strong id="statApproved">—</strong><span>Visible to the community</span></article>
+              <article class="stat-card"><small>Audio tracks</small><strong id="statAudio">—</strong><span>Published and draft</span></article>
+            </div>
+            <div class="admin-grid">
+              <article class="admin-card"><div class="admin-card-head"><h3>Latest family submissions</h3><button class="soft-button" type="button" data-jump="experiences">Review all</button></div><div class="activity-list" id="latestExperiences"></div></article>
+              <article class="admin-card"><div class="admin-card-head"><h3>Book readiness</h3><small id="readinessPercent">0%</small></div><div class="activity-list" id="readinessList"></div></article>
+            </div>
+          </section>
+
+          <section class="admin-view" data-admin-view="content">
+            <div class="admin-heading"><div><h2>Book content</h2><p>Edit words, activities, stories, ayat, duas, and the learning flow.</p></div></div>
+            <div class="content-studio">
+              <aside class="studio-column"><h3>Letters</h3><div class="studio-list letter-list" id="adminLetterList"></div></aside>
+              <aside class="studio-column"><h3>Words</h3><div class="studio-list word-list" id="adminWordList"></div></aside>
+              <div class="studio-form-wrap">
+                <form class="editor-form" id="wordEditor">
+                  <input type="hidden" name="id">
+                  <div class="form-grid"><label>Arabic word<input class="arabic-input" name="arabic_word" required></label><label>English meaning<input name="english" required></label></div>
+                  <label>Purpose<textarea name="purpose" rows="2"></textarea></label>
+                  <label>Educator instructions<textarea name="instructions" rows="3"></textarea></label>
+                  <div class="form-grid"><label>Preparation · one item per line<textarea name="prep" rows="7"></textarea></label><label>Warm-up · one step per line<textarea name="warmup" rows="7"></textarea></label></div>
+                  <label>Activity steps · one step per line<textarea name="activity" rows="9"></textarea></label>
+                  <label>Story<textarea name="story" rows="4"></textarea></label>
+                  <div class="form-grid"><label>Qur’an connection<textarea name="quran" rows="4"></textarea></label><label>Dua<textarea name="dua" rows="4"></textarea></label></div>
+                  <label>Wrap-up<textarea name="wrap_up" rows="2"></textarea></label>
+                  <label><span>Publication</span><select name="published"><option value="true">Published</option><option value="false">Draft</option></select></label>
+                  <div class="form-actions"><button class="primary-button" type="submit">Save word</button></div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-view" data-admin-view="audio">
+            <div class="admin-heading"><div><h2>Song &amp; audio</h2><p>Upload the book song or attach audio to a letter or word.</p></div></div>
+            <div class="audio-layout">
+              <form class="audio-form" id="audioForm">
+                <h3>Add an audio track</h3>
+                <label>Track title<input name="title" required placeholder="Young Hearts Book Song"></label>
+                <label>Description<textarea name="description" rows="3" placeholder="A short introduction shown beside the player"></textarea></label>
+                <label>Where should it appear?<select name="scope_type" id="audioScopeType"><option value="book">Whole book</option><option value="letter">One letter</option><option value="word">One word</option></select></label>
+                <label id="audioScopeTargetWrap" hidden>Choose target<select name="scope_id" id="audioScopeTarget"></select></label>
+                <label>Audio file<input type="file" name="file" accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/webm" required></label>
+                <label><span>Featured track</span><select name="featured"><option value="true">Yes — show first</option><option value="false">No</option></select></label>
+                <label><span>Publication</span><select name="published"><option value="true">Published</option><option value="false">Draft</option></select></label>
+                <button class="primary-button" type="submit">Upload audio <span aria-hidden="true">↑</span></button>
+                <p class="auth-message" id="audioStatus"></p>
+              </form>
+              <div><div class="admin-card-head"><h3>Audio library</h3><small id="audioCount">0 tracks</small></div><div class="audio-list" id="audioList"></div></div>
+            </div>
+          </section>
+
+          <section class="admin-view" data-admin-view="experiences">
+            <div class="admin-heading"><div><h2>Family experiences</h2><p>Review, edit, approve, reject, remove attachments, or delete submissions.</p></div><select class="soft-button" id="experienceFilter"><option value="all">All submissions</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Contributor</th><th>Word</th><th>Experience</th><th>Attachment</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="experienceRows"></tbody></table></div>
+          </section>
+
+          <section class="admin-view" data-admin-view="settings">
+            <div class="admin-heading"><div><h2>Site settings</h2><p>Change the public introduction and book presentation without touching code.</p></div></div>
+            <div class="settings-layout">
+              <form class="settings-form" id="settingsForm">
+                <h3>Public copy</h3>
+                <label>Site title<input name="site_title"></label>
+                <label>Hero introduction<textarea name="site_subtitle" rows="5"></textarea></label>
+                <label>Book song heading<input name="song_heading"></label>
+                <label>Book song introduction<textarea name="song_description" rows="3"></textarea></label>
+                <button class="primary-button" type="submit">Save public settings</button>
+              </form>
+              <article class="settings-form danger-zone"><h3>Publishing guidance</h3><p>Keep the public site focused and safe:</p><div class="activity-list"><div class="activity-row"><span class="dot"></span><div><strong>Review every family submission</strong><small>Check names, language, images, and children’s privacy.</small></div></div><div class="activity-row"><span class="dot"></span><div><strong>Use properly licensed audio</strong><small>Upload only music and recordings QAJ owns or may publish.</small></div></div><div class="activity-row"><span class="dot"></span><div><strong>Verify Qur’an references</strong><small>Have an appropriate educator review religious content before publishing.</small></div></div></div></article>
+            </div>
+          </section>
+
+          <section class="admin-view" data-admin-view="export">
+            <div class="admin-heading"><div><h2>Backup &amp; export</h2><p>Keep a portable copy of the book content and approved community experiences.</p></div></div>
+            <div class="export-box"><div><div class="export-icon">↓</div><h3>Download the complete book data</h3><p>The export includes letters, word content, settings, audio metadata, and experience records. Files themselves remain safely stored in Supabase.</p><button class="primary-button" id="exportBtn" type="button">Download JSON backup</button></div></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="admin-modal" id="experienceModal" hidden>
+    <div class="admin-modal-card">
+      <div class="admin-modal-head"><h3>Edit experience</h3><button type="button" data-close-admin-modal>×</button></div>
+      <form class="experience-edit-form" id="experienceEditForm">
+        <input type="hidden" name="id">
+        <label>Contributor name<input name="contributor_name" maxlength="80" required></label>
+        <label>Experience<textarea name="description" rows="7" maxlength="1500" required></textarea></label>
+        <label>Status<select name="status"><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label>
+        <div class="media-preview" id="experienceMediaPreview">No attachment</div>
+        <div class="form-actions"><button class="soft-button" id="removeMediaBtn" type="button">Remove attachment</button><button class="primary-button" type="submit">Save changes</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/admin-loader.js"></script>
+</body>
+</html>
