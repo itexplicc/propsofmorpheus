@@ -31,12 +31,15 @@ jobs:
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
+
           class Parser(HTMLParser):
               pass
+
           for name in ('index.html', 'admin.html'):
               text = Path('qaj-young-hearts', name).read_text(encoding='utf-8')
               Parser().feed(text)
               assert '<!doctype html>' in text.lower()
+
           required = [
               'qaj-young-hearts/assets/config.js',
               'qaj-young-hearts/assets/styles.1.part',
@@ -45,8 +48,21 @@ jobs:
               'qaj-young-hearts/assets/app.3.part',
               'qaj-young-hearts/assets/admin.1.part',
               'qaj-young-hearts/assets/admin.3.part',
+              'qaj-young-hearts/qaj-book-cover.webp',
+              'qaj-young-hearts/favicon.svg',
+              'qaj-young-hearts/favicon-32.png',
+              'qaj-young-hearts/apple-touch-icon.png',
+              'qaj-young-hearts/icon-192.png',
+              'qaj-young-hearts/site.webmanifest',
           ]
           for path in required:
-              assert Path(path).is_file(), path
+              item = Path(path)
+              assert item.is_file(), path
+              assert item.stat().st_size > 0, f'{path} is empty'
+
+          cover = Path('qaj-young-hearts/qaj-book-cover.webp')
+          assert cover.stat().st_size > 20_000, 'Official cover binary is suspiciously small or missing'
+          assert cover.read_bytes()[:4] == b'RIFF', 'Official cover is not a valid WebP container'
+
           print('QAJ Young Hearts release validated')
           PY
