@@ -1,0 +1,82 @@
+
+(() => {
+  "use strict";
+
+  const cfg = window.QAJ_CONFIG || {};
+  if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+
+  const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
+
+  document.body.classList.add("qaj-password-only");
+
+  const form = document.querySelector("#authForm");
+  const message = document.querySelector("#authMessage");
+  const submit = document.querySelector("#authSubmit");
+  const title = document.querySelector("#authTitle");
+  const description = document.querySelector("#authDescription");
+  const tabs = document.querySelector(".auth-tabs");
+  const emailInput = form?.querySelector('input[name="email"]');
+  const passwordInput = form?.querySelector('input[name="password"]');
+
+  if (title) title.textContent = "Book Admin";
+  if (description) description.textContent = "Enter the shared admin password to manage the book.";
+  if (tabs) tabs.remove();
+  if (emailInput) {
+    emailInput.value = "it.quranarabicjournal@gmail.com";
+    emailInput.autocomplete = "off";
+    emailInput.closest("label")?.classList.add("qaj-hidden-admin-email");
+  }
+  if (passwordInput) {
+    passwordInput.placeholder = "Admin password";
+    passwordInput.autocomplete = "current-password";
+    const label = passwordInput.closest("label");
+    if (label?.firstChild?.nodeType === Node.TEXT_NODE) label.firstChild.nodeValue = "Admin password";
+  }
+  if (submit) submit.innerHTML = 'Open book admin <span aria-hidden="true">→</span>';
+
+  if (!form) return;
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const password = String(passwordInput?.value || "");
+    if (!password) return;
+
+    submit.disabled = true;
+    message.textContent = "Opening the protected book admin…";
+
+    try {
+      const response = await fetch(`${cfg.supabaseUrl}/functions/v1/qaj-yh-admin-login`, {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          apikey:cfg.supabaseKey,
+          Authorization:`Bearer ${cfg.supabaseKey}`
+        },
+        body:JSON.stringify({ password })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Incorrect admin password");
+      if (!result.token_hash) throw new Error("Admin session could not be created");
+
+      const { data, error } = await client.auth.verifyOtp({
+        token_hash:result.token_hash,
+        type:"email"
+      });
+      if (error) throw error;
+      if (!data.session) throw new Error("Admin session could not be verified");
+
+      message.textContent = "Access granted. Loading the studio…";
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      message.textContent = error.message || "Admin access failed.";
+      passwordInput?.select();
+    } finally {
+      submit.disabled = false;
+    }
+  }, true);
+})();
