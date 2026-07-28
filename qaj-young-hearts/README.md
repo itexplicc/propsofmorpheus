@@ -47,6 +47,10 @@ The public song section remains hidden until an administrator uploads and publis
 
 Open **Site Settings** in the educator studio and adjust **Letter card size**. The value is stored as the public `card_scale` setting in Supabase and is applied automatically to the public book.
 
+## Official cover
+
+The supplied book cover is embedded in the final visual stylesheet as a text-safe WebP data URI. This prevents binary corruption during automated repository and Pages deployment while keeping the 3D book shell, page depth and responsive layout intact.
+
 ## Content review
 
 The curriculum was migrated from the supplied source. Before broad publication, the book owner or a qualified educator should review Qur’an references, translations, religious wording, and intentional placeholders.

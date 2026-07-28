@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reassemble and validate JavaScript
+
+      - name: Validate JavaScript
         shell: bash
         run: |
+          set -euo pipefail
           cat qaj-young-hearts/assets/app.*.part > /tmp/qaj-app.js
           cat qaj-young-hearts/assets/admin.*.part > /tmp/qaj-admin.js
           node --check /tmp/qaj-app.js
@@ -25,28 +27,72 @@ jobs:
           node --check qaj-young-hearts/assets/app-loader.js
           node --check qaj-young-hearts/assets/admin-loader.js
           node --check qaj-young-hearts/assets/style-loader.js
-      - name: Validate HTML and required files
+
+      - name: Validate HTML
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
+
           class Parser(HTMLParser):
               pass
+
           for name in ('index.html', 'admin.html'):
-              text = Path('qaj-young-hearts', name).read_text(encoding='utf-8')
+              path = Path('qaj-young-hearts', name)
+              text = path.read_text(encoding='utf-8')
               Parser().feed(text)
-              assert '<!doctype html>' in text.lower()
-          required = [
-              'qaj-young-hearts/assets/config.js',
-              'qaj-young-hearts/assets/styles.1.part',
-              'qaj-young-hearts/assets/styles.4.part',
-              'qaj-young-hearts/assets/app.1.part',
-              'qaj-young-hearts/assets/app.3.part',
-              'qaj-young-hearts/assets/admin.1.part',
-              'qaj-young-hearts/assets/admin.3.part',
-          ]
-          for path in required:
-              assert Path(path).is_file(), path
-          print('QAJ Young Hearts release validated')
+              if '<!doctype html>' not in text.lower():
+                  raise SystemExit(f'{path} is not a complete HTML document')
           PY
+
+      - name: Validate required release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            qaj-young-hearts/assets/config.js
+            qaj-young-hearts/assets/styles.1.part
+            qaj-young-hearts/assets/styles.4.part
+            qaj-young-hearts/assets/styles.9.part
+            qaj-young-hearts/assets/app.1.part
+            qaj-young-hearts/assets/app.3.part
+            qaj-young-hearts/assets/admin.1.part
+            qaj-young-hearts/assets/admin.3.part
+            qaj-young-hearts/assets/icons/favicon.svg
+            qaj-young-hearts/assets/icons/favicon-32.png
+            qaj-young-hearts/assets/icons/apple-touch-icon.png
+            qaj-young-hearts/assets/icons/icon-192.png
+            qaj-young-hearts/site.webmanifest
+          )
+          for path in "${required[@]}"; do
+            test -s "$path" || { echo "Missing or empty release file: $path" >&2; exit 1; }
+          done
+
+      - name: Validate embedded official cover
+        shell: bash
+        run: |
+          set -euo pipefail
+          cover_css=qaj-young-hearts/assets/styles.9.part
+          grep -q 'data:image/webp;base64,UklGR' "$cover_css"
+          test "$(stat -c%s "$cover_css")" -gt 12000
+          test "$(git hash-object "$cover_css")" = '61b903b1c45310cea0de2ea0a50f76ea93c6ef33'
+
+      - name: Validate icon binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          for icon in \
+            qaj-young-hearts/assets/icons/favicon-32.png \
+            qaj-young-hearts/assets/icons/apple-touch-icon.png \
+            qaj-young-hearts/assets/icons/icon-192.png; do
+            signature="$(od -An -tx1 -N8 "$icon" | tr -d ' \n')"
+            test "$signature" = "89504e470d0a1a0a" || {
+              echo "Invalid PNG signature: $icon" >&2
+              exit 1
+            }
+          done
+
+      - name: Release validated
+        run: echo 'QAJ Young Hearts release validated'
