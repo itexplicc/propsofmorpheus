@@ -1,0 +1,52 @@
+name: Validate QAJ Young Hearts
+
+on:
+  pull_request:
+    paths:
+      - 'qaj-young-hearts/**'
+      - '.github/workflows/qaj-young-hearts-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reassemble and validate JavaScript
+        shell: bash
+        run: |
+          cat qaj-young-hearts/assets/app.*.part > /tmp/qaj-app.js
+          cat qaj-young-hearts/assets/admin.*.part > /tmp/qaj-admin.js
+          node --check /tmp/qaj-app.js
+          node --check /tmp/qaj-admin.js
+          node --check qaj-young-hearts/assets/app-loader.js
+          node --check qaj-young-hearts/assets/admin-loader.js
+          node --check qaj-young-hearts/assets/style-loader.js
+      - name: Validate HTML and required files
+        shell: bash
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class Parser(HTMLParser):
+              pass
+          for name in ('index.html', 'admin.html'):
+              text = Path('qaj-young-hearts', name).read_text(encoding='utf-8')
+              Parser().feed(text)
+              assert '<!doctype html>' in text.lower()
+          required = [
+              'qaj-young-hearts/assets/config.js',
+              'qaj-young-hearts/assets/styles.1.part',
+              'qaj-young-hearts/assets/styles.4.part',
+              'qaj-young-hearts/assets/app.1.part',
+              'qaj-young-hearts/assets/app.3.part',
+              'qaj-young-hearts/assets/admin.1.part',
+              'qaj-young-hearts/assets/admin.3.part',
+          ]
+          for path in required:
+              assert Path(path).is_file(), path
+          print('QAJ Young Hearts release validated')
+          PY

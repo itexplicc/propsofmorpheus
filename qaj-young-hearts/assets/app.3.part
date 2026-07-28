@@ -1,0 +1,5 @@
+   applyFallback();
+    renderLetters();
+    toast("The book opened in offline mode.", "error");
+  });
+})();

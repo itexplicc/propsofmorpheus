@@ -1,0 +1,271 @@
+(() => {
+  "use strict";
+
+  const cfg = window.QAJ_CONFIG || {};
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const esc = (value = "") => String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+  const safeFileName = name => String(name || "file").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-100) || "file";
+  const arrayOf = value => Array.isArray(value) ? value : [];
+  const formatDate = value => value ? new Intl.DateTimeFormat(undefined, { year:"numeric", month:"short", day:"numeric" }).format(new Date(value)) : "";
+  const formatTime = seconds => {
+    if (!Number.isFinite(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
+  const elements = {
+    grid: $("#letterGrid"),
+    search: $("#wordSearch"),
+    resetSearch: $("#resetSearch"),
+    resultCount: $("#resultCount"),
+    empty: $("#emptyState"),
+    modal: $("#wordModal"),
+    dialog: $(".word-dialog"),
+    dialogScroll: $("#dialogScroll"),
+    continueBtn: $("#continueBtn"),
+    randomBtn: $("#randomWordBtn"),
+    progressRing: $("#progressRing"),
+    progressPercent: $("#progressPercent"),
+    progressText: $("#progressText"),
+    markLearned: $("#markLearnedBtn"),
+    experienceGrid: $("#experienceGrid"),
+    form: $("#experienceForm"),
+    formStatus: $("#formStatus"),
+    fileInput: $("#experienceForm input[type=file]"),
+    fileLabel: $("#fileLabel"),
+    toastRegion: $("#toastRegion"),
+    songSection: $("#songSection"),
+    bookAudio: $("#bookAudio"),
+    audioPlay: $("#audioPlayBtn"),
+    audioSeek: $("#audioSeek"),
+    audioTitle: $("#audioTitle"),
+    audioDescription: $("#songDescription"),
+    audioTime: $("#audioTime")
+  };
+
+  const state = {
+    client: null,
+    backendReady: false,
+    letters: [],
+    words: [],
+    settings: {},
+    audioTracks: [],
+    currentLetter: null,
+    currentWord: null,
+    lastFocused: null,
+    explored: new Set(JSON.parse(localStorage.getItem("qaj-yh-explored") || "[]")),
+    lastWordId: localStorage.getItem("qaj-yh-last-word") || "",
+    experienceCache: new Map()
+  };
+
+  function toast(message, type = "info") {
+    const node = document.createElement("div");
+    node.className = `toast ${type === "error" ? "error" : ""}`;
+    node.textContent = message;
+    elements.toastRegion.append(node);
+    setTimeout(() => node.remove(), 3800);
+  }
+
+  function buildFallback() {
+    const letters = [];
+    const words = [];
+    (window.QAJ_FALLBACK_DATA || []).forEach((entry, letterIndex) => {
+      const id = `fallback-letter-${letterIndex + 1}`;
+      const [theme_start, theme_end, accent] = entry.colors || ["#eee", "#ddd", "#345"];
+      letters.push({
+        id,
+        code: entry.l,
+        position: entry.position || letterIndex + 1,
+        theme_start,
+        theme_end,
+        accent,
+        published: true
+      });
+      (entry.words || []).forEach((word, wordIndex) => words.push({
+        id: `fallback-word-${letterIndex + 1}-${wordIndex + 1}`,
+        letter_id: id,
+        arabic_word: word.w,
+        english: word.en,
+        purpose: word.purpose,
+        instructions: word.instructions_for,
+        prep: word.prep || [],
+        warmup: word.warmup || [],
+        activity: word.how || [],
+        story: word.story,
+        quran: word.quran,
+        dua: word.dua,
+        wrap_up: word.wrap,
+        position: word.position || wordIndex + 1,
+        published: true
+      }));
+    });
+    return { letters, words };
+  }
+
+  async function connectBackend() {
+    if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return false;
+    try {
+      state.client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      const [lettersRes, wordsRes, settingsRes, audioRes] = await Promise.all([
+        state.client.from("qaj_yh_letters").select("*").eq("published", true).order("position"),
+        state.client.from("qaj_yh_words").select("*").eq("published", true).order("position"),
+        state.client.from("qaj_yh_site_settings").select("key,value").eq("is_public", true),
+        state.client.from("qaj_yh_audio_tracks").select("*").eq("published", true).order("sort_order")
+      ]);
+      const error = lettersRes.error || wordsRes.error || settingsRes.error || audioRes.error;
+      if (error) throw error;
+      if (!lettersRes.data?.length || !wordsRes.data?.length) throw new Error("No published content returned");
+      state.letters = lettersRes.data;
+      state.words = wordsRes.data;
+      state.settings = Object.fromEntries((settingsRes.data || []).map(row => [row.key, row.value]));
+      state.audioTracks = audioRes.data || [];
+      state.backendReady = true;
+      return true;
+    } catch (error) {
+      console.warn("QAJ backend unavailable; using the packaged book data.", error);
+      return false;
+    }
+  }
+
+  function applyFallback() {
+    const fallback = buildFallback();
+    state.letters = fallback.letters;
+    state.words = fallback.words;
+    state.settings = {
+      site_title: "Quranic Arabic for Young Hearts",
+      site_subtitle: "Discover every Arabic letter through meaningful Qur’anic words, stories, crafts, duas, and shared family experiences."
+    };
+  }
+
+  function applySettings() {
+    const title = state.settings.site_title;
+    const subtitle = state.settings.site_subtitle;
+    const songHeading = state.settings.song_heading;
+    const songDescription = state.settings.song_description;
+    if (typeof title === "string" && title.trim()) {
+      document.title = title;
+      const heroTitle = $("#heroTitle");
+      if (heroTitle) heroTitle.textContent = title;
+    }
+    if (typeof subtitle === "string" && subtitle.trim()) $("#heroSubtitle").textContent = subtitle;
+    if (typeof songHeading === "string" && songHeading.trim()) $("#songHeading").textContent = songHeading;
+    if (typeof songDescription === "string" && songDescription.trim()) elements.audioDescription.textContent = songDescription;
+  }
+
+  function getWords(letterId) {
+    return state.words.filter(word => word.letter_id === letterId).sort((a, b) => a.position - b.position);
+  }
+
+  function renderLetters() {
+    elements.grid.setAttribute("aria-busy", "false");
+    elements.grid.innerHTML = state.letters.map((letter, index) => {
+      const words = getWords(letter.id);
+      return `
+        <article class="letter-card" data-letter-id="${esc(letter.id)}" style="--card-a:${esc(letter.theme_start)};--card-b:${esc(letter.theme_end)};--card-accent:${esc(letter.accent)}">
+          <div class="card-face card-front" role="button" tabindex="0" aria-expanded="false" aria-label="Letter ${esc(letter.code)}. Reveal words">
+            <span class="card-number">${String(index + 1).padStart(2, "0")}</span>
+            <span class="card-letter" lang="ar" dir="rtl">${esc(letter.code)}</span>
+            <span class="card-footer"><span>${words.length} meaningful words</span><i aria-hidden="true">↗</i></span>
+          </div>
+          <div class="card-face card-back" aria-hidden="true">
+            <div class="back-top"><span class="mini-letter" lang="ar" dir="rtl">${esc(letter.code)}</span><span>Choose a word</span></div>
+            <div class="word-options">
+              ${words.map(word => `
+                <button class="word-option" type="button" data-word-id="${esc(word.id)}" data-search="${esc(`${letter.code} ${word.arabic_word} ${word.english} ${word.purpose}`.toLowerCase())}">
+                  <span><b class="arabic" lang="ar" dir="rtl">${esc(word.arabic_word)}</b><small class="english">${esc(word.english)}</small></span><span class="arrow" aria-hidden="true">→</span>
+                </button>`).join("")}
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+
+    $$(".letter-card", elements.grid).forEach(card => {
+      const front = $(".card-front", card);
+      const toggle = () => {
+        const shouldOpen = !card.classList.contains("is-open");
+        $$(".letter-card.is-open", elements.grid).forEach(open => {
+          if (open !== card) setCardOpen(open, false);
+        });
+        setCardOpen(card, shouldOpen);
+      };
+      front.addEventListener("click", toggle);
+      front.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+      });
+      $$(".word-option", card).forEach(button => button.addEventListener("click", event => {
+        event.stopPropagation();
+        openWord(button.dataset.wordId, button);
+      }));
+    });
+    updateResultCount();
+  }
+
+  function setCardOpen(card, open) {
+    card.classList.toggle("is-open", open);
+    const front = $(".card-front", card);
+    const back = $(".card-back", card);
+    front.setAttribute("aria-expanded", open ? "true" : "false");
+    back.setAttribute("aria-hidden", open ? "false" : "true");
+  }
+
+  function runSearch() {
+    const query = elements.search.value.trim().toLowerCase();
+    let visibleLetters = 0;
+    $$(".letter-card", elements.grid).forEach(card => {
+      const letter = state.letters.find(item => item.id === card.dataset.letterId);
+      const wordButtons = $$(".word-option", card);
+      let wordMatches = 0;
+      wordButtons.forEach(button => {
+        const match = !query || button.dataset.search.includes(query);
+        button.classList.toggle("search-hidden", !match);
+        button.classList.toggle("search-match", Boolean(query && match));
+        if (match) wordMatches++;
+      });
+      const letterMatch = !query || letter?.code.includes(query) || wordMatches > 0;
+      card.classList.toggle("search-hidden", !letterMatch);
+      if (letterMatch) {
+        visibleLetters++;
+        if (query && wordMatches) setCardOpen(card, true);
+        else if (!query) setCardOpen(card, false);
+      }
+    });
+    elements.resetSearch.hidden = !query;
+    elements.empty.hidden = visibleLetters !== 0;
+    updateResultCount(visibleLetters, query);
+  }
+
+  function updateResultCount(count = state.letters.length, query = "") {
+    elements.resultCount.textContent = query ? `${count} matching ${count === 1 ? "letter" : "letters"}` : `${state.letters.length} letters`;
+  }
+
+  function openWord(wordId, trigger = null) {
+    const word = state.words.find(item => item.id === wordId);
+    if (!word) return;
+    const letter = state.letters.find(item => item.id === word.letter_id);
+    if (!letter) return;
+    state.currentWord = word;
+    state.currentLetter = letter;
+    state.lastFocused = trigger || document.activeElement;
+    state.lastWordId = word.id;
+    localStorage.setItem("qaj-yh-last-word", word.id);
+    updateContinueButton();
+
+    const hero = $("#dialogHero");
+    hero.style.setProperty("--dialog-a", letter.theme_start);
+    hero.style.setProperty("--dialog-b", letter.theme_end);
+    hero.style.setProperty("--dialog-accent", letter.accent);
+    $("#dialogLetter").textContent = letter.code;
+    $("#dialogKicker").textContent = `Letter ${letter.code}`;
+    $("#wordTitle").textContent = word.arabic_word;
+    $("#wordEnglish").textContent = word.english || "";
+    $("#purposeText").textContent = word.purpose || "";
+    $("#instructionsText").textContent = word.instructions || "";
+    $("#wrapText").textContent = word.wrap_up || "";
+    $("#storyText").textContent = word.story || "";
+    $("#quranText").textContent = word.quran || "A Qur’an connection can be added by the educator.";
+    $("#duaText").textContent = word.dua || "";
+    renderList($("#warmupLi
