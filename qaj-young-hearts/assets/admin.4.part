@@ -1,0 +1,121 @@
+
+(() => {
+  "use strict";
+
+  const cfg = window.QAJ_CONFIG || {};
+  const LIVE_ADMIN_URL = "https://itexplicc.github.io/propsofmorpheus/qaj-young-hearts/admin.html";
+  if (!window.supabase?.createClient || !cfg.supabaseUrl || !cfg.supabaseKey) return;
+
+  const client = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
+
+  const authForm = document.querySelector("#authForm");
+  const authMessage = document.querySelector("#authMessage");
+  const authSubmit = document.querySelector("#authSubmit");
+
+  if (authForm) {
+    authForm.addEventListener("submit", async event => {
+      const signupTab = document.querySelector('[data-auth-mode="signup"]');
+      if (!signupTab?.classList.contains("is-active")) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const form = new FormData(authForm);
+      const email = String(form.get("email") || "").trim();
+      const password = String(form.get("password") || "");
+      authSubmit.disabled = true;
+      authMessage.textContent = "Creating your protected studio account…";
+
+      try {
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name:"Young Hearts Owner" },
+            emailRedirectTo: LIVE_ADMIN_URL
+          }
+        });
+        if (error) throw error;
+
+        if (data.session) {
+          authMessage.textContent = "Account created. Opening the educator studio…";
+          window.location.href = LIVE_ADMIN_URL;
+          return;
+        }
+
+        authMessage.textContent = "Confirmation sent. The button in the email now returns to this live educator studio. After confirming, sign in with the same password.";
+      } catch (error) {
+        console.error(error);
+        authMessage.textContent = error.message || "The owner account could not be created.";
+      } finally {
+        authSubmit.disabled = false;
+      }
+    }, true);
+  }
+
+  const settingsForm = document.querySelector("#settingsForm");
+  if (settingsForm) {
+    const control = document.createElement("label");
+    control.className = "qaj-card-size-control";
+    control.innerHTML = `
+      <span>Letter card size</span>
+      <div class="qaj-card-size-row">
+        <input id="qajCardScale" name="card_scale" type="range" min="74" max="115" step="1" value="78" aria-describedby="qajCardScaleHelp">
+        <output id="qajCardScaleValue" for="qajCardScale">78%</output>
+      </div>
+      <small id="qajCardScaleHelp">Smaller values fit more letter cards on each row. Changes apply to the public book after saving.</small>`;
+    const saveButton = settingsForm.querySelector('button[type="submit"]');
+    settingsForm.insertBefore(control, saveButton || null);
+
+    const range = control.querySelector("#qajCardScale");
+    const output = control.querySelector("#qajCardScaleValue");
+    range.addEventListener("input", () => output.textContent = `${range.value}%`);
+
+    (async () => {
+      try {
+        const { data, error } = await client
+          .from("qaj_yh_site_settings")
+          .select("value")
+          .eq("key", "card_scale")
+          .maybeSingle();
+        if (error) throw error;
+        const value = Math.min(115, Math.max(74, Number(data?.value) || 78));
+        range.value = String(value);
+        output.textContent = `${value}%`;
+      } catch (error) {
+        console.warn("Could not load the saved letter card size.", error);
+      }
+    })();
+
+    settingsForm.addEventListener("submit", async () => {
+      try {
+        const { data:{ user } } = await client.auth.getUser();
+        if (!user) return;
+        const value = Math.min(115, Math.max(74, Number(range.value) || 78));
+        const { error } = await client.from("qaj_yh_site_settings").upsert({
+          key:"card_scale",
+          value,
+          is_public:true,
+          updated_by:user.id,
+          updated_at:new Date().toISOString()
+        }, { onConflict:"key" });
+        if (error) throw error;
+        output.textContent = `${value}%`;
+      } catch (error) {
+        console.error("Letter card size could not be saved.", error);
+      }
+    });
+  }
+
+  if (window.location.hash.includes("access_token=")) {
+    if (authMessage) authMessage.textContent = "Email confirmed. Opening the educator studio…";
+    setTimeout(async () => {
+      const { data:{ session } } = await client.auth.getSession();
+      if (!session) return;
+      history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      if (document.querySelector("#adminApp")?.hidden) window.location.reload();
+    }, 900);
+  }
+})();
