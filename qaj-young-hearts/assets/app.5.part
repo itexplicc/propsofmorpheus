@@ -1,1 +1,74 @@
-placeholder
+
+/* QAJ Young Hearts V2.4 — harakat-tolerant Arabic search */
+(() => {
+  "use strict";
+
+  const normalizeArabicSearch = value => String(value || "")
+    .toLocaleLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const search = document.querySelector("#wordSearch");
+  const grid = document.querySelector("#letterGrid");
+  const resultCount = document.querySelector("#resultCount");
+  const emptyState = document.querySelector("#emptyState");
+  const resetButton = document.querySelector("#resetSearch");
+  if (!search || !grid) return;
+
+  function applyHarakatSearch() {
+    const query = normalizeArabicSearch(search.value);
+    const cards = [...grid.querySelectorAll(".letter-card")];
+    if (!cards.length) return;
+
+    let visibleCards = 0;
+    cards.forEach(card => {
+      const letterText = card.querySelector(".card-letter")?.textContent || "";
+      const options = [...card.querySelectorAll(".word-option")];
+      let matches = 0;
+
+      options.forEach(option => {
+        const searchable = normalizeArabicSearch(option.textContent || "");
+        const matched = !query || searchable.includes(query);
+        option.classList.toggle("search-hidden", !matched);
+        option.classList.toggle("search-match", Boolean(query && matched));
+        if (matched) matches += 1;
+      });
+
+      const cardMatched = !query || normalizeArabicSearch(letterText).includes(query) || matches > 0;
+      card.classList.toggle("search-hidden", !cardMatched);
+      if (cardMatched) {
+        visibleCards += 1;
+        if (query && matches > 0) {
+          card.classList.add("is-open");
+          card.querySelector(".card-front")?.setAttribute("aria-expanded", "true");
+          card.querySelector(".card-back")?.setAttribute("aria-hidden", "false");
+        }
+      }
+    });
+
+    if (resetButton) resetButton.hidden = !query;
+    if (emptyState) emptyState.hidden = visibleCards !== 0;
+    if (resultCount) {
+      resultCount.textContent = query
+        ? `${visibleCards} matching ${visibleCards === 1 ? "letter" : "letters"}`
+        : `${cards.length} letters`;
+    }
+  }
+
+  search.addEventListener("input", () => queueMicrotask(applyHarakatSearch));
+  resetButton?.addEventListener("click", () => queueMicrotask(applyHarakatSearch));
+
+  const observer = new MutationObserver(() => {
+    if (grid.querySelector(".letter-card")) applyHarakatSearch();
+  });
+  observer.observe(grid, { childList:true, subtree:false });
+
+  window.QAJ_NORMALIZE_SEARCH = normalizeArabicSearch;
+})();
