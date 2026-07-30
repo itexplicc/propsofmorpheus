@@ -1,4 +1,4 @@
-name: Source Labs Live Repair
+name: Source Labs Refined Interface Deploy
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - '.github/workflows/source-labs-live-repair.yml'
+      - 'source-labs-overrides/**'
   workflow_dispatch:
 
 permissions:
@@ -14,7 +15,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: source-labs-live-repair
+  group: source-labs-refined-interface
   cancel-in-progress: false
 
 jobs:
@@ -28,17 +29,54 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Restore and validate Source Labs
+      - name: Restore working Source Labs base and apply redesign
         shell: bash
         run: |
           set -euo pipefail
 
-          cat source-labs-build/release-20260730.tar.xz.b64.* > /tmp/source-labs-release.b64
-          base64 --decode /tmp/source-labs-release.b64 > /tmp/source-labs-release.tar.xz
-          echo 'f693e08c868cd737b3a269cf967087d7048b865f1af498123025d28f547431d2  /tmp/source-labs-release.tar.xz' | sha256sum --check --strict
-
+          base='https://itexplicc.github.io/propsofmorpheus/source-labs'
           rm -rf source-labs
-          tar -xJf /tmp/source-labs-release.tar.xz
+          mkdir -p source-labs/assets source-labs/admin
+
+          fetch() {
+            local remote="$1"
+            local local_path="$2"
+            curl --fail --silent --show-error --location \
+              "${base}/${remote}?redesign-base=${GITHUB_SHA}" \
+              --output "source-labs/${local_path}"
+          }
+
+          fetch 'index.html' 'index.html'
+          fetch 'products.html' 'products.html'
+          fetch 'services.html' 'services.html'
+          fetch 'about.html' 'about.html'
+          fetch 'contact.html' 'contact.html'
+          fetch 'privacy.html' 'privacy.html'
+          fetch 'terms.html' 'terms.html'
+          fetch '404.html' '404.html'
+          fetch 'robots.txt' 'robots.txt'
+          fetch 'sitemap.xml' 'sitemap.xml'
+          fetch 'manifest.webmanifest' 'manifest.webmanifest'
+          fetch 'assets/app.js' 'assets/app.js'
+          fetch 'assets/config.js' 'assets/config.js'
+          fetch 'assets/logo.svg' 'assets/logo.svg'
+          fetch 'admin/index.html' 'admin/index.html'
+          fetch 'admin/admin.css' 'admin/admin.css'
+          fetch 'admin/admin.js' 'admin/admin.js'
+
+          cp source-labs-overrides/assets/styles.css source-labs/assets/styles.css
+          cp source-labs-overrides/assets/redesign.js source-labs/assets/redesign.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          script = '<script src="assets/redesign.js" defer></script>'
+          for path in Path('source-labs').glob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              if script not in text:
+                  text = text.replace('</head>', f'  {script}\n</head>')
+              path.write_text(text, encoding='utf-8')
+          PY
 
           required=(
             source-labs/index.html
@@ -54,6 +92,7 @@ jobs:
             source-labs/manifest.webmanifest
             source-labs/assets/styles.css
             source-labs/assets/app.js
+            source-labs/assets/redesign.js
             source-labs/assets/config.js
             source-labs/assets/logo.svg
             source-labs/admin/index.html
@@ -66,8 +105,18 @@ jobs:
           done
 
           node --check source-labs/assets/app.js
+          node --check source-labs/assets/redesign.js
           node --check source-labs/assets/config.js
           node --check source-labs/admin/admin.js
+
+          grep -q 'Source Labs visual system' source-labs/assets/styles.css
+          grep -q 'SOURCE BRIEF' source-labs/assets/redesign.js
+          grep -q 'assets/redesign.js' source-labs/index.html
+          grep -q 'aunqmysckjuucmvzqxjp.supabase.co' source-labs/assets/config.js
+          if grep -qi 'service_role' source-labs/assets/config.js; then
+            echo 'A privileged Supabase key must never be shipped to the browser.' >&2
+            exit 1
+          fi
 
           python3 - <<'PY'
           import json
@@ -76,12 +125,7 @@ jobs:
 
           json.loads(Path('source-labs/manifest.webmanifest').read_text(encoding='utf-8'))
           ET.parse('source-labs/sitemap.xml')
-          config = Path('source-labs/assets/config.js').read_text(encoding='utf-8')
-          if 'aunqmysckjuucmvzqxjp.supabase.co' not in config:
-              raise SystemExit('Expected Source Labs Supabase project is missing.')
-          if 'service_role' in config.lower():
-              raise SystemExit('A privileged Supabase key must never be shipped to the browser.')
-          print('Source Labs release validated.')
+          print('Refined Source Labs release validated.')
           PY
 
       - name: Configure GitHub Pages
@@ -116,10 +160,13 @@ jobs:
 
           test -s _site/source-labs/index.html
           test -s _site/source-labs/admin/index.html
+          test -s _site/source-labs/assets/redesign.js
           node --check _site/source-labs/assets/app.js
+          node --check _site/source-labs/assets/redesign.js
           node --check _site/source-labs/admin/admin.js
-          grep -qi 'Source Labs' _site/source-labs/index.html
-          grep -qi 'Source Labs Admin' _site/source-labs/admin/index.html
+          grep -q 'assets/redesign.js' _site/source-labs/index.html
+          grep -q 'Source Labs visual system' _site/source-labs/assets/styles.css
+          grep -q 'SOURCE BRIEF' _site/source-labs/assets/redesign.js
 
           touch _site/.nojekyll
 
@@ -158,44 +205,53 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify public website and admin
+      - name: Verify refined public website and admin
         shell: bash
         run: |
           set -euo pipefail
           public_url='https://itexplicc.github.io/propsofmorpheus/source-labs/'
           admin_url='https://itexplicc.github.io/propsofmorpheus/source-labs/admin/'
+          css_url='https://itexplicc.github.io/propsofmorpheus/source-labs/assets/styles.css'
+          redesign_url='https://itexplicc.github.io/propsofmorpheus/source-labs/assets/redesign.js'
 
-          verify_url() {
-            local url="$1"
-            local expected="$2"
-            local output="$3"
-            for attempt in $(seq 1 36); do
-              code="$(curl -L --silent --show-error --output "$output" --write-out '%{http_code}' "${url}?release=${GITHUB_SHA}" || true)"
-              if [ "$code" = '200' ] && grep -qi "$expected" "$output"; then
-                echo "Verified HTTP 200: $url"
-                return 0
-              fi
-              echo "Waiting for Pages: $url — attempt $attempt/36, HTTP $code"
-              sleep 10
-            done
-            echo "Could not verify deployment: $url" >&2
-            return 1
-          }
+          for attempt in $(seq 1 36); do
+            public_code="$(curl -L --silent --show-error --output /tmp/source-labs-public.html --write-out '%{http_code}' "${public_url}?release=${GITHUB_SHA}" || true)"
+            admin_code="$(curl -L --silent --show-error --output /tmp/source-labs-admin.html --write-out '%{http_code}' "${admin_url}?release=${GITHUB_SHA}" || true)"
+            css_code="$(curl -L --silent --show-error --output /tmp/source-labs-styles.css --write-out '%{http_code}' "${css_url}?release=${GITHUB_SHA}" || true)"
+            redesign_code="$(curl -L --silent --show-error --output /tmp/source-labs-redesign.js --write-out '%{http_code}' "${redesign_url}?release=${GITHUB_SHA}" || true)"
 
-          verify_url "$public_url" 'Source Labs' /tmp/source-labs-public.html
-          verify_url "$admin_url" 'Source Labs Admin' /tmp/source-labs-admin.html
+            if [ "$public_code" = '200' ] \
+              && [ "$admin_code" = '200' ] \
+              && [ "$css_code" = '200' ] \
+              && [ "$redesign_code" = '200' ] \
+              && grep -q 'assets/redesign.js' /tmp/source-labs-public.html \
+              && grep -qi 'Source Labs Admin' /tmp/source-labs-admin.html \
+              && grep -q 'Source Labs visual system' /tmp/source-labs-styles.css \
+              && grep -q 'SOURCE BRIEF' /tmp/source-labs-redesign.js; then
+              echo 'Verified refined Source Labs deployment.'
+              break
+            fi
+
+            if [ "$attempt" = '36' ]; then
+              echo 'Could not verify refined Source Labs deployment.' >&2
+              exit 1
+            fi
+            echo "Waiting for refined Pages release — attempt ${attempt}/36"
+            sleep 10
+          done
 
           mkdir -p .deploy-status
           cat > .deploy-status/source-labs-live.txt <<EOF
-          Source Labs deployment verified successfully.
+          Source Labs refined interface deployment verified successfully.
           Source commit: ${GITHUB_SHA}
           Public URL: ${public_url}
           Admin URL: ${admin_url}
+          Visual system: refined-production-v2
           Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
           EOF
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .deploy-status/source-labs-live.txt
-          git commit -m 'Record verified Source Labs deployment'
+          git commit -m 'Record verified refined Source Labs deployment'
           git push origin HEAD:main
