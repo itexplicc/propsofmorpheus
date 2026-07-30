@@ -48,6 +48,12 @@ jobs:
                   text = text.replace('</head>', f'  {public_js}\n</head>')
               path.write_text(text, encoding='utf-8')
 
+          app_path = Path('source-labs/assets/app.js')
+          app = app_path.read_text(encoding='utf-8')
+          app = app.replace("else if (PAGE === 'products') renderCatalogue('product');", "else if (PAGE === 'products' && !document.querySelector('script[src*=\"category-discovery\"]')) renderCatalogue('product');")
+          app = app.replace("else if (PAGE === 'services') renderCatalogue('service');", "else if (PAGE === 'services' && !document.querySelector('script[src*=\"category-discovery\"]')) renderCatalogue('service');")
+          app_path.write_text(app, encoding='utf-8')
+
           admin_path = Path('source-labs/admin/index.html')
           admin = admin_path.read_text(encoding='utf-8')
           admin_css = '<link rel="stylesheet" href="admin-v3.css">'
