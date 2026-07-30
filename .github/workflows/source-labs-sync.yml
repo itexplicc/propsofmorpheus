@@ -1,0 +1,64 @@
+name: Capture Source Labs Live Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/source-labs-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download current verified Source Labs build
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://itexplicc.github.io/propsofmorpheus/source-labs'
+          rm -rf source-labs-current
+          mkdir -p source-labs-current/assets source-labs-current/admin
+          fetch() {
+            curl --fail --silent --show-error --location "${base}/$1?capture=${GITHUB_SHA}" --output "source-labs-current/$2"
+          }
+          fetch index.html index.html
+          fetch products.html products.html
+          fetch services.html services.html
+          fetch about.html about.html
+          fetch contact.html contact.html
+          fetch privacy.html privacy.html
+          fetch terms.html terms.html
+          fetch 404.html 404.html
+          fetch robots.txt robots.txt
+          fetch sitemap.xml sitemap.xml
+          fetch manifest.webmanifest manifest.webmanifest
+          fetch assets/app.js assets/app.js
+          fetch assets/config.js assets/config.js
+          fetch assets/logo.svg assets/logo.svg
+          fetch assets/styles.css assets/styles.css
+          fetch assets/redesign.js assets/redesign.js
+          fetch admin/index.html admin/index.html
+          fetch admin/admin.css admin/admin.css
+          fetch admin/admin.js admin/admin.js
+          test -s source-labs-current/assets/app.js
+          test -s source-labs-current/admin/admin.js
+          node --check source-labs-current/assets/app.js
+          node --check source-labs-current/assets/redesign.js
+          node --check source-labs-current/admin/admin.js
+      - name: Commit captured build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add source-labs-current
+          if git diff --cached --quiet; then
+            echo 'No live build changes to capture.'
+            exit 0
+          fi
+          git commit -m 'Capture current Source Labs live build'
+          git push origin HEAD:main
