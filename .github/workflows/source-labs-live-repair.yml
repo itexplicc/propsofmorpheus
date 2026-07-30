@@ -1,0 +1,201 @@
+name: Source Labs Live Repair
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/source-labs-live-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: source-labs-live-repair
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore and validate Source Labs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat source-labs-build/release-20260730.tar.xz.b64.* > /tmp/source-labs-release.b64
+          base64 --decode /tmp/source-labs-release.b64 > /tmp/source-labs-release.tar.xz
+          echo 'f693e08c868cd737b3a269cf967087d7048b865f1af498123025d28f547431d2  /tmp/source-labs-release.tar.xz' | sha256sum --check --strict
+
+          rm -rf source-labs
+          tar -xJf /tmp/source-labs-release.tar.xz
+
+          required=(
+            source-labs/index.html
+            source-labs/products.html
+            source-labs/services.html
+            source-labs/about.html
+            source-labs/contact.html
+            source-labs/privacy.html
+            source-labs/terms.html
+            source-labs/404.html
+            source-labs/robots.txt
+            source-labs/sitemap.xml
+            source-labs/manifest.webmanifest
+            source-labs/assets/styles.css
+            source-labs/assets/app.js
+            source-labs/assets/config.js
+            source-labs/assets/logo.svg
+            source-labs/admin/index.html
+            source-labs/admin/admin.css
+            source-labs/admin/admin.js
+          )
+
+          for file in "${required[@]}"; do
+            test -s "$file" || { echo "Missing required file: $file" >&2; exit 1; }
+          done
+
+          node --check source-labs/assets/app.js
+          node --check source-labs/assets/config.js
+          node --check source-labs/admin/admin.js
+
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          json.loads(Path('source-labs/manifest.webmanifest').read_text(encoding='utf-8'))
+          ET.parse('source-labs/sitemap.xml')
+          config = Path('source-labs/assets/config.js').read_text(encoding='utf-8')
+          if 'aunqmysckjuucmvzqxjp.supabase.co' not in config:
+              raise SystemExit('Expected Source Labs Supabase project is missing.')
+          if 'service_role' in config.lower():
+              raise SystemExit('A privileged Supabase key must never be shipped to the browser.')
+          print('Source Labs release validated.')
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build complete Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/tin-tech-packaging
+          mkdir -p _site/mako-pet-food
+          mkdir -p _site/nautical-naturals-brand
+          mkdir -p _site/nautical-naturals
+          mkdir -p _site/hi-line-auto
+          mkdir -p _site/qaj-young-hearts
+          mkdir -p _site/apex-rubber
+          mkdir -p _site/source-labs
+
+          cp -R tin-tech-packaging/. _site/tin-tech-packaging/
+          python3 mako-site-source/run-build.py _site/mako-pet-food
+
+          cat > _site/nautical-naturals-brand/index.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=../mako-pet-food/"><link rel="canonical" href="../mako-pet-food/"><title>MAKO</title></head><body><p><a href="../mako-pet-food/">Open MAKO</a></p></body></html>
+          HTML
+          cp _site/nautical-naturals-brand/index.html _site/nautical-naturals/index.html
+
+          cp -R hi-line-auto/. _site/hi-line-auto/
+          cp -R qaj-young-hearts/. _site/qaj-young-hearts/
+          cp -R apex-rubber/. _site/apex-rubber/
+          cp -R source-labs/. _site/source-labs/
+
+          test -s _site/source-labs/index.html
+          test -s _site/source-labs/admin/index.html
+          node --check _site/source-labs/assets/app.js
+          node --check _site/source-labs/admin/admin.js
+          grep -qi 'Source Labs' _site/source-labs/index.html
+          grep -qi 'Source Labs Admin' _site/source-labs/admin/index.html
+
+          touch _site/.nojekyll
+
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>Public Brand Sites</title>
+            <style>
+              body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:48px;background:#f5f3ee;color:#12324a}
+              main{max-width:760px;margin:auto}
+              a{display:block;margin:14px 0;padding:18px 20px;border:1px solid #d8d2c8;border-radius:16px;background:#fff;color:#12324a;text-decoration:none;font-weight:700}
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>Public Brand Sites</h1>
+              <a href="./source-labs/">Source Labs</a>
+              <a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a>
+              <a href="./hi-line-auto/">Hi-Line Auto</a>
+              <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
+              <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
+            </main>
+          </body>
+          </html>
+          HTML
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify public website and admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          public_url='https://itexplicc.github.io/propsofmorpheus/source-labs/'
+          admin_url='https://itexplicc.github.io/propsofmorpheus/source-labs/admin/'
+
+          verify_url() {
+            local url="$1"
+            local expected="$2"
+            local output="$3"
+            for attempt in $(seq 1 36); do
+              code="$(curl -L --silent --show-error --output "$output" --write-out '%{http_code}' "${url}?release=${GITHUB_SHA}" || true)"
+              if [ "$code" = '200' ] && grep -qi "$expected" "$output"; then
+                echo "Verified HTTP 200: $url"
+                return 0
+              fi
+              echo "Waiting for Pages: $url — attempt $attempt/36, HTTP $code"
+              sleep 10
+            done
+            echo "Could not verify deployment: $url" >&2
+            return 1
+          }
+
+          verify_url "$public_url" 'Source Labs' /tmp/source-labs-public.html
+          verify_url "$admin_url" 'Source Labs Admin' /tmp/source-labs-admin.html
+
+          mkdir -p .deploy-status
+          cat > .deploy-status/source-labs-live.txt <<EOF
+          Source Labs deployment verified successfully.
+          Source commit: ${GITHUB_SHA}
+          Public URL: ${public_url}
+          Admin URL: ${admin_url}
+          Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          EOF
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .deploy-status/source-labs-live.txt
+          git commit -m 'Record verified Source Labs deployment'
+          git push origin HEAD:main
