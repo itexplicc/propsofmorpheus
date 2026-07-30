@@ -11,8 +11,7 @@ on:
       - 'qaj-young-hearts/**'
       - 'apex-rubber/**'
       - 'source-labs/**'
-      - 'source-labs-build/**'
-      - 'source-labs-overrides/**'
+      - 'source-labs-build/direct-release.b64'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -39,7 +38,7 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Prepare isolated public sites
+      - name: Prepare public sites
         shell: bash
         run: |
           set -euo pipefail
@@ -51,6 +50,7 @@ jobs:
           mkdir -p _site/hi-line-auto
           mkdir -p _site/qaj-young-hearts
           mkdir -p _site/apex-rubber
+          mkdir -p _site/source-labs
 
           cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
           cp tin-tech-packaging/about.html _site/tin-tech-packaging/about.html
@@ -104,22 +104,9 @@ jobs:
           cp -R apex-rubber/. _site/apex-rubber/
           test -f _site/apex-rubber/remaining-75k/index.html
 
-          cat source-labs-build/site.tar.gz.b64.part-* | base64 --decode > /tmp/source-labs-site.tar.gz
-          echo '28d251624ede640d5a631ec21a97c64c9789d075e7c03db10edc69d0d0a3ab8a  /tmp/source-labs-site.tar.gz' | sha256sum --check --strict
-          tar -xzf /tmp/source-labs-site.tar.gz -C _site --no-same-owner
-          test "$(sed -n '316p' _site/source-labs/assets/app.js)" = '    }'
-          sed -i '316d' _site/source-labs/assets/app.js
-
-          cp -R source-labs-overrides/. _site/source-labs/
-          python3 - <<'PY'
-          from pathlib import Path
-          for path in Path('_site/source-labs').glob('*.html'):
-              text = path.read_text(encoding='utf-8')
-              script = '<script src="assets/redesign.js" defer></script>'
-              if script not in text:
-                  text = text.replace('</head>', f'  {script}\n</head>')
-              path.write_text(text, encoding='utf-8')
-          PY
+          base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz
+          echo '75a28a15533105a70c5f3db3d09f0fcd697beb0f62930cbda4e57c3fe73be218  /tmp/source-labs-direct.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/source-labs-direct.tar.gz -C _site/source-labs --strip-components=1 --no-same-owner
 
           test -f _site/source-labs/index.html
           test -f _site/source-labs/products.html
@@ -182,18 +169,24 @@ jobs:
         env:
           PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}source-labs/
           ADMIN_URL: ${{ steps.deployment.outputs.page_url }}source-labs/admin/
+          CSS_URL: ${{ steps.deployment.outputs.page_url }}source-labs/assets/styles.css
+          REDESIGN_URL: ${{ steps.deployment.outputs.page_url }}source-labs/assets/redesign.js
         run: |
           set -euo pipefail
-          for attempt in {1..15}; do
+          for attempt in {1..20}; do
             if curl --fail --silent --show-error --location "$PUBLIC_URL" -o /tmp/source-labs-public.html \
               && curl --fail --silent --show-error --location "$ADMIN_URL" -o /tmp/source-labs-admin.html \
-              && grep -q 'Source Labs' /tmp/source-labs-public.html \
+              && curl --fail --silent --show-error --location "$CSS_URL" -o /tmp/source-labs-styles.css \
+              && curl --fail --silent --show-error --location "$REDESIGN_URL" -o /tmp/source-labs-redesign.js \
+              && grep -q 'assets/redesign.js' /tmp/source-labs-public.html \
+              && grep -q 'Source Labs visual system' /tmp/source-labs-styles.css \
+              && grep -q 'SOURCE BRIEF' /tmp/source-labs-redesign.js \
               && grep -q 'Source Labs' /tmp/source-labs-admin.html; then
               exit 0
             fi
             sleep 4
           done
-          echo 'Source Labs public verification failed.' >&2
+          echo 'Source Labs refined public verification failed.' >&2
           exit 1
 
       - name: Record successful Pages deployment
@@ -228,7 +221,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path,
-              message: 'Record successful public Pages deployment',
+              message: 'Record successful refined Source Labs deployment',
               content: Buffer.from(body).toString('base64'),
               branch: 'main',
               ...(sha ? { sha } : {})
