@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071b2d"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+  <title>Source Labs Admin</title><link rel="icon" href="../assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.9/dist/umd/supabase.min.js" defer crossorigin="anonymous"></script><script src="../assets/config.js" defer></script><script src="admin.js" defer></script>
+</head>
+<body>
+  <section id="login-view" class="admin-login">
+    <div class="login-story"><a class="login-brand" href="../index.html" target="_blank" rel="noopener"><span class="brand-mark" aria-hidden="true"><i></i><b></b><em></em></span><span><strong>SOURCE</strong><small>LABS</small></span></a><div class="login-copy"><p>Source Labs operating console</p><h1>Control the whole story.</h1><p>Edit every public word, switch homepage sections, manage products and services, route enquiries, optimise images, review analytics and keep English and Sinhala aligned.</p></div><small>Admin access is protected by Supabase Auth and row-level security.</small></div>
+    <div class="login-form-shell"><form id="login-form" class="login-card" novalidate><p class="field-help">No username required</p><h2>Admin access</h2><p>Enter the Source Labs admin password. The first successful login securely creates the hidden administrator account.</p><div class="field"><label for="admin-password">Password</label><input id="admin-password" name="password" type="password" autocomplete="current-password" required minlength="8" autofocus></div><label style="display:flex;gap:8px;align-items:center;font-size:.8rem;color:#647786"><input id="show-password" type="checkbox"> Show password</label><div id="login-status" class="login-status" role="status"></div><button class="button button-primary" type="submit">Open admin</button><p class="field-help" style="margin-top:16px">After the first login, change the initial password in Account.</p></form></div>
+  </section>
+
+  <div id="app-view" class="admin-app hidden">
+    <aside class="admin-sidebar"><div class="sidebar-head"><a class="sidebar-brand" href="../index.html" target="_blank" rel="noopener"><span class="brand-mark" aria-hidden="true"><i></i><b></b><em></em></span><span><strong>SOURCE</strong><small>LABS ADMIN</small></span></a><button class="sidebar-close" type="button" aria-label="Close menu">×</button></div><div id="admin-navigation"></div><div class="sidebar-foot"><a href="../index.html" target="_blank" rel="noopener">↗ Open public website</a><button id="comfort-toggle" type="button">Aa Comfort reading</button><button id="logout-button" type="button">Sign out</button></div></aside>
+    <main class="admin-main"><header class="admin-topbar"><div class="topbar-left"><button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open menu">☰</button><div class="topbar-title"><strong id="topbar-title">Dashboard</strong><small id="topbar-subtitle">Source Labs CMS</small></div></div><div class="topbar-actions"><span class="status-pill">Live backend</span><button class="button button-secondary button-small" id="quick-assist" type="button">Writing assistant</button><a class="button button-primary button-small" href="../index.html" target="_blank" rel="noopener"><span>View site</span> ↗</a></div></header><div class="admin-content" id="admin-content"><div class="loading">Loading Source Labs Admin…</div></div></main>
+  </div>
+  <div id="modal-root"></div><div id="drawer-root"></div><div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+</body></html>
