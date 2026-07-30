@@ -1,12 +1,11 @@
-name: Source Labs Refined Interface Deploy
+name: Source Labs Category Experience Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - '.github/workflows/source-labs-live-repair.yml'
-      - 'source-labs-overrides/**'
+      - 'source-labs-current/**'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: source-labs-refined-interface
+  group: source-labs-category-experience
   cancel-in-progress: false
 
 jobs:
@@ -29,104 +28,78 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Restore working Source Labs base and apply redesign
+      - name: Prepare and validate Source Labs
         shell: bash
         run: |
           set -euo pipefail
-
-          base='https://itexplicc.github.io/propsofmorpheus/source-labs'
           rm -rf source-labs
-          mkdir -p source-labs/assets source-labs/admin
-
-          fetch() {
-            local remote="$1"
-            local local_path="$2"
-            curl --fail --silent --show-error --location \
-              "${base}/${remote}?redesign-base=${GITHUB_SHA}" \
-              --output "source-labs/${local_path}"
-          }
-
-          fetch 'index.html' 'index.html'
-          fetch 'products.html' 'products.html'
-          fetch 'services.html' 'services.html'
-          fetch 'about.html' 'about.html'
-          fetch 'contact.html' 'contact.html'
-          fetch 'privacy.html' 'privacy.html'
-          fetch 'terms.html' 'terms.html'
-          fetch '404.html' '404.html'
-          fetch 'robots.txt' 'robots.txt'
-          fetch 'sitemap.xml' 'sitemap.xml'
-          fetch 'manifest.webmanifest' 'manifest.webmanifest'
-          fetch 'assets/app.js' 'assets/app.js'
-          fetch 'assets/config.js' 'assets/config.js'
-          fetch 'assets/logo.svg' 'assets/logo.svg'
-          fetch 'admin/index.html' 'admin/index.html'
-          fetch 'admin/admin.css' 'admin/admin.css'
-          fetch 'admin/admin.js' 'admin/admin.js'
-
-          cp source-labs-overrides/assets/styles.css source-labs/assets/styles.css
-          cp source-labs-overrides/assets/redesign.js source-labs/assets/redesign.js
+          cp -R source-labs-current source-labs
 
           python3 - <<'PY'
           from pathlib import Path
 
-          script = '<script src="assets/redesign.js" defer></script>'
+          public_css = '<link rel="stylesheet" href="assets/v3.css">'
+          public_js = '<script src="assets/category-discovery.js" defer></script>'
           for path in Path('source-labs').glob('*.html'):
               text = path.read_text(encoding='utf-8')
-              if script not in text:
-                  text = text.replace('</head>', f'  {script}\n</head>')
+              if public_css not in text:
+                  text = text.replace('</head>', f'  {public_css}\n</head>')
+              if public_js not in text:
+                  text = text.replace('</head>', f'  {public_js}\n</head>')
               path.write_text(text, encoding='utf-8')
+
+          admin_path = Path('source-labs/admin/index.html')
+          admin = admin_path.read_text(encoding='utf-8')
+          admin_css = '<link rel="stylesheet" href="admin-v3.css">'
+          admin_js = '<script src="admin-v3.js" defer></script>'
+          if admin_css not in admin:
+              admin = admin.replace('</head>', f'  {admin_css}\n</head>')
+          if admin_js not in admin:
+              admin = admin.replace('</head>', f'  {admin_js}\n</head>')
+          admin_path.write_text(admin, encoding='utf-8')
           PY
 
           required=(
             source-labs/index.html
             source-labs/products.html
             source-labs/services.html
+            source-labs/category.html
             source-labs/about.html
             source-labs/contact.html
             source-labs/privacy.html
             source-labs/terms.html
-            source-labs/404.html
-            source-labs/robots.txt
-            source-labs/sitemap.xml
-            source-labs/manifest.webmanifest
             source-labs/assets/styles.css
             source-labs/assets/app.js
             source-labs/assets/redesign.js
+            source-labs/assets/v3.css
+            source-labs/assets/category-discovery.js
             source-labs/assets/config.js
-            source-labs/assets/logo.svg
             source-labs/admin/index.html
             source-labs/admin/admin.css
             source-labs/admin/admin.js
+            source-labs/admin/admin-v3.css
+            source-labs/admin/admin-v3.js
           )
-
           for file in "${required[@]}"; do
             test -s "$file" || { echo "Missing required file: $file" >&2; exit 1; }
           done
 
           node --check source-labs/assets/app.js
           node --check source-labs/assets/redesign.js
-          node --check source-labs/assets/config.js
+          node --check source-labs/assets/category-discovery.js
           node --check source-labs/admin/admin.js
-
-          grep -q 'Source Labs visual system' source-labs/assets/styles.css
-          grep -q 'SOURCE BRIEF' source-labs/assets/redesign.js
-          grep -q 'assets/redesign.js' source-labs/index.html
+          node --check source-labs/admin/admin-v3.js
+          grep -q 'Source Labs category discovery' source-labs/assets/v3.css
+          grep -q 'category_landings' source-labs/assets/category-discovery.js
+          grep -q 'Category landing pages' source-labs/admin/admin-v3.js
+          grep -q 'assets/category-discovery.js' source-labs/products.html
+          grep -q 'assets/category-discovery.js' source-labs/services.html
+          grep -q 'admin-v3.js' source-labs/admin/index.html
           grep -q 'aunqmysckjuucmvzqxjp.supabase.co' source-labs/assets/config.js
           if grep -qi 'service_role' source-labs/assets/config.js; then
             echo 'A privileged Supabase key must never be shipped to the browser.' >&2
             exit 1
           fi
-
-          python3 - <<'PY'
-          import json
-          import xml.etree.ElementTree as ET
-          from pathlib import Path
-
-          json.loads(Path('source-labs/manifest.webmanifest').read_text(encoding='utf-8'))
-          ET.parse('source-labs/sitemap.xml')
-          print('Refined Source Labs release validated.')
-          PY
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -136,64 +109,20 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/tin-tech-packaging
-          mkdir -p _site/mako-pet-food
-          mkdir -p _site/nautical-naturals-brand
-          mkdir -p _site/nautical-naturals
-          mkdir -p _site/hi-line-auto
-          mkdir -p _site/qaj-young-hearts
-          mkdir -p _site/apex-rubber
-          mkdir -p _site/source-labs
-
+          mkdir -p _site/tin-tech-packaging _site/mako-pet-food _site/nautical-naturals-brand _site/nautical-naturals _site/hi-line-auto _site/qaj-young-hearts _site/apex-rubber _site/source-labs
           cp -R tin-tech-packaging/. _site/tin-tech-packaging/
           python3 mako-site-source/run-build.py _site/mako-pet-food
-
           cat > _site/nautical-naturals-brand/index.html <<'HTML'
           <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=../mako-pet-food/"><link rel="canonical" href="../mako-pet-food/"><title>MAKO</title></head><body><p><a href="../mako-pet-food/">Open MAKO</a></p></body></html>
           HTML
           cp _site/nautical-naturals-brand/index.html _site/nautical-naturals/index.html
-
           cp -R hi-line-auto/. _site/hi-line-auto/
           cp -R qaj-young-hearts/. _site/qaj-young-hearts/
           cp -R apex-rubber/. _site/apex-rubber/
           cp -R source-labs/. _site/source-labs/
-
-          test -s _site/source-labs/index.html
-          test -s _site/source-labs/admin/index.html
-          test -s _site/source-labs/assets/redesign.js
-          node --check _site/source-labs/assets/app.js
-          node --check _site/source-labs/assets/redesign.js
-          node --check _site/source-labs/admin/admin.js
-          grep -q 'assets/redesign.js' _site/source-labs/index.html
-          grep -q 'Source Labs visual system' _site/source-labs/assets/styles.css
-          grep -q 'SOURCE BRIEF' _site/source-labs/assets/redesign.js
-
           touch _site/.nojekyll
-
           cat > _site/index.html <<'HTML'
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Public Brand Sites</title>
-            <style>
-              body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:48px;background:#f5f3ee;color:#12324a}
-              main{max-width:760px;margin:auto}
-              a{display:block;margin:14px 0;padding:18px 20px;border:1px solid #d8d2c8;border-radius:16px;background:#fff;color:#12324a;text-decoration:none;font-weight:700}
-            </style>
-          </head>
-          <body>
-            <main>
-              <h1>Public Brand Sites</h1>
-              <a href="./source-labs/">Source Labs</a>
-              <a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a>
-              <a href="./hi-line-auto/">Hi-Line Auto</a>
-              <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
-              <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
-            </main>
-          </body>
-          </html>
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Public Brand Sites</title><style>body{font-family:system-ui;margin:0;padding:48px;background:#f5f3ee;color:#12324a}main{max-width:760px;margin:auto}a{display:block;margin:14px 0;padding:18px 20px;border:1px solid #d8d2c8;border-radius:16px;background:#fff;color:#12324a;text-decoration:none;font-weight:700}</style></head><body><main><h1>Public Brand Sites</h1><a href="./source-labs/">Source Labs</a><a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a><a href="./hi-line-auto/">Hi-Line Auto</a><a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a><a href="./tin-tech-packaging/">Tin Tech Packaging</a></main></body></html>
           HTML
 
       - name: Upload Pages artifact
@@ -205,53 +134,46 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify refined public website and admin
+      - name: Verify public, category and admin experiences
         shell: bash
         run: |
           set -euo pipefail
-          public_url='https://itexplicc.github.io/propsofmorpheus/source-labs/'
-          admin_url='https://itexplicc.github.io/propsofmorpheus/source-labs/admin/'
-          css_url='https://itexplicc.github.io/propsofmorpheus/source-labs/assets/styles.css'
-          redesign_url='https://itexplicc.github.io/propsofmorpheus/source-labs/assets/redesign.js'
-
+          base='https://itexplicc.github.io/propsofmorpheus/source-labs'
           for attempt in $(seq 1 36); do
-            public_code="$(curl -L --silent --show-error --output /tmp/source-labs-public.html --write-out '%{http_code}' "${public_url}?release=${GITHUB_SHA}" || true)"
-            admin_code="$(curl -L --silent --show-error --output /tmp/source-labs-admin.html --write-out '%{http_code}' "${admin_url}?release=${GITHUB_SHA}" || true)"
-            css_code="$(curl -L --silent --show-error --output /tmp/source-labs-styles.css --write-out '%{http_code}' "${css_url}?release=${GITHUB_SHA}" || true)"
-            redesign_code="$(curl -L --silent --show-error --output /tmp/source-labs-redesign.js --write-out '%{http_code}' "${redesign_url}?release=${GITHUB_SHA}" || true)"
-
-            if [ "$public_code" = '200' ] \
-              && [ "$admin_code" = '200' ] \
-              && [ "$css_code" = '200' ] \
-              && [ "$redesign_code" = '200' ] \
-              && grep -q 'assets/redesign.js' /tmp/source-labs-public.html \
-              && grep -qi 'Source Labs Admin' /tmp/source-labs-admin.html \
-              && grep -q 'Source Labs visual system' /tmp/source-labs-styles.css \
-              && grep -q 'SOURCE BRIEF' /tmp/source-labs-redesign.js; then
-              echo 'Verified refined Source Labs deployment.'
+            public_code="$(curl -L --silent --show-error -o /tmp/products.html -w '%{http_code}' "${base}/products.html?release=${GITHUB_SHA}" || true)"
+            category_code="$(curl -L --silent --show-error -o /tmp/category.html -w '%{http_code}' "${base}/category.html?slug=packaging-materials&release=${GITHUB_SHA}" || true)"
+            admin_code="$(curl -L --silent --show-error -o /tmp/admin.html -w '%{http_code}' "${base}/admin/?release=${GITHUB_SHA}" || true)"
+            public_js_code="$(curl -L --silent --show-error -o /tmp/category-discovery.js -w '%{http_code}' "${base}/assets/category-discovery.js?release=${GITHUB_SHA}" || true)"
+            admin_js_code="$(curl -L --silent --show-error -o /tmp/admin-v3.js -w '%{http_code}' "${base}/admin/admin-v3.js?release=${GITHUB_SHA}" || true)"
+            css_code="$(curl -L --silent --show-error -o /tmp/v3.css -w '%{http_code}' "${base}/assets/v3.css?release=${GITHUB_SHA}" || true)"
+            if [ "$public_code" = 200 ] && [ "$category_code" = 200 ] && [ "$admin_code" = 200 ] && [ "$public_js_code" = 200 ] && [ "$admin_js_code" = 200 ] && [ "$css_code" = 200 ] \
+              && grep -q 'assets/category-discovery.js' /tmp/products.html \
+              && grep -q 'data-page="category"' /tmp/category.html \
+              && grep -q 'admin-v3.js' /tmp/admin.html \
+              && grep -q 'category_landings' /tmp/category-discovery.js \
+              && grep -q 'Category landing pages' /tmp/admin-v3.js \
+              && grep -q 'v3-menu-backdrop' /tmp/v3.css; then
+              echo 'Verified Source Labs category experience deployment.'
               break
             fi
-
-            if [ "$attempt" = '36' ]; then
-              echo 'Could not verify refined Source Labs deployment.' >&2
-              exit 1
-            fi
-            echo "Waiting for refined Pages release — attempt ${attempt}/36"
+            if [ "$attempt" = 36 ]; then echo 'Could not verify Source Labs category experience deployment.' >&2; exit 1; fi
             sleep 10
           done
 
           mkdir -p .deploy-status
-          cat > .deploy-status/source-labs-live.txt <<EOF
-          Source Labs refined interface deployment verified successfully.
+          cat > .deploy-status/source-labs-live.txt <<EOF2
+          Source Labs category experience deployment verified successfully.
           Source commit: ${GITHUB_SHA}
-          Public URL: ${public_url}
-          Admin URL: ${admin_url}
-          Visual system: refined-production-v2
+          Public URL: ${base}/
+          Products URL: ${base}/products.html
+          Services URL: ${base}/services.html
+          Category URL pattern: ${base}/category.html?slug=<category-slug>
+          Admin URL: ${base}/admin/
+          Experience: category-first-media-v3
           Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-          EOF
-
+          EOF2
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .deploy-status/source-labs-live.txt
-          git commit -m 'Record verified refined Source Labs deployment'
+          git commit -m 'Record verified Source Labs category deployment'
           git push origin HEAD:main
