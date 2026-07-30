@@ -10,6 +10,8 @@ on:
       - 'hi-line-auto/**'
       - 'qaj-young-hearts/**'
       - 'apex-rubber/**'
+      - 'source-labs/**'
+      - 'source-labs-build/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -102,6 +104,25 @@ jobs:
           cp -R apex-rubber/. _site/apex-rubber/
           test -f _site/apex-rubber/remaining-75k/index.html
 
+          cat source-labs-build/site.tar.gz.b64.part-* | base64 --decode > /tmp/source-labs-site.tar.gz
+          echo '28d251624ede640d5a631ec21a97c64c9789d075e7c03db10edc69d0d0a3ab8a  /tmp/source-labs-site.tar.gz' | sha256sum --check --strict
+          tar -xzf /tmp/source-labs-site.tar.gz -C _site --no-same-owner
+          test "$(sed -n '316p' _site/source-labs/assets/app.js)" = '    }'
+          sed -i '316d' _site/source-labs/assets/app.js
+          test -f _site/source-labs/index.html
+          test -f _site/source-labs/products.html
+          test -f _site/source-labs/services.html
+          test -f _site/source-labs/contact.html
+          test -f _site/source-labs/admin/index.html
+          test -s _site/source-labs/assets/app.js
+          test -s _site/source-labs/assets/styles.css
+          test -s _site/source-labs/admin/admin.js
+          grep -q 'Source Labs' _site/source-labs/index.html
+          grep -q 'aunqmysckjuucmvzqxjp.supabase.co' _site/source-labs/assets/config.js
+          node --check _site/source-labs/assets/app.js
+          node --check _site/source-labs/admin/admin.js
+          node --check _site/source-labs/assets/config.js
+
           touch _site/.nojekyll
 
           cat > _site/index.html <<'HTML'
@@ -120,6 +141,7 @@ jobs:
           <body>
             <main>
               <h1>Public Brand Sites</h1>
+              <a href="./source-labs/">Source Labs</a>
               <a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a>
               <a href="./hi-line-auto/">Hi-Line Auto</a>
               <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
@@ -160,6 +182,7 @@ jobs:
               'Public brand sites deployment completed successfully.',
               `Source commit: ${context.sha}`,
               `Pages URL: ${{ steps.deployment.outputs.page_url }}`,
+              `Source Labs URL: ${{ steps.deployment.outputs.page_url }}source-labs/`,
               `Completed: ${new Date().toISOString()}`,
               ''
             ].join('\n');
