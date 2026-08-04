@@ -43,13 +43,14 @@ jobs:
           import base64
           import re
 
-          parts = [Path(f'source-labs-build/site.tar.gz.b64.part-{index:02d}') for index in range(8)]
-          payload = b''.join(path.read_bytes() for path in parts)
-          payload = re.sub(rb'\s+', b'', payload)
-          if len(payload) % 4:
-              payload += b'=' * (-len(payload) % 4)
-          decoded = base64.b64decode(payload, validate=True)
-          Path('/tmp/source-labs-site.tar.gz').write_bytes(decoded)
+          output = bytearray()
+          for index in range(8):
+              path = Path(f'source-labs-build/site.tar.gz.b64.part-{index:02d}')
+              payload = re.sub(rb'\s+', b'', path.read_bytes())
+              if len(payload) % 4:
+                  payload += b'=' * (-len(payload) % 4)
+              output.extend(base64.b64decode(payload, validate=True))
+          Path('/tmp/source-labs-site.tar.gz').write_bytes(output)
           PY
           gzip --test /tmp/source-labs-site.tar.gz
           tar -tzf /tmp/source-labs-site.tar.gz >/dev/null
