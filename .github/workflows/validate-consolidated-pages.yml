@@ -35,17 +35,28 @@ jobs:
           grep -q "galle-spice" .github/workflows/deploy-tin-tech-pages.yml
           grep -q "Verify consolidated public pages" .github/workflows/deploy-tin-tech-pages.yml
 
-          for part in source-labs-build/release-20260730.tar.xz.b64.{00..05}; do
+          for part in source-labs-build/site.tar.gz.b64.part-{00..07}; do
             test -s "$part"
           done
-          cat source-labs-build/release-20260730.tar.xz.b64.{00..05} > /tmp/source-labs-release.b64
-          base64 --decode /tmp/source-labs-release.b64 > /tmp/source-labs-release.tar.xz
-          xz --test /tmp/source-labs-release.tar.xz
-          tar -tJf /tmp/source-labs-release.tar.xz >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+          import re
+
+          parts = [Path(f'source-labs-build/site.tar.gz.b64.part-{index:02d}') for index in range(8)]
+          payload = b''.join(path.read_bytes() for path in parts)
+          payload = re.sub(rb'\s+', b'', payload)
+          if len(payload) % 4:
+              payload += b'=' * (-len(payload) % 4)
+          decoded = base64.b64decode(payload, validate=True)
+          Path('/tmp/source-labs-site.tar.gz').write_bytes(decoded)
+          PY
+          gzip --test /tmp/source-labs-site.tar.gz
+          tar -tzf /tmp/source-labs-site.tar.gz >/dev/null
 
           rm -rf /tmp/source-labs-check
           mkdir -p /tmp/source-labs-check
-          tar -xJf /tmp/source-labs-release.tar.xz -C /tmp/source-labs-check --strip-components=1 --no-same-owner
+          tar -xzf /tmp/source-labs-site.tar.gz -C /tmp/source-labs-check --strip-components=1 --no-same-owner
           test -f /tmp/source-labs-check/index.html
           test -f /tmp/source-labs-check/products.html
           test -f /tmp/source-labs-check/services.html
@@ -65,4 +76,4 @@ jobs:
           node --check /tmp/source-labs-check/admin/admin.js
           node --check /tmp/source-labs-check/assets/config.js
 
-          echo 'Consolidated Pages workflow and complete Source Labs xz release validation passed.'
+          echo 'Consolidated Pages workflow and complete Source Labs site release validation passed.'
