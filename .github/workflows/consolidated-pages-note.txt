@@ -1,0 +1,1 @@
+GitHub Pages uses one artifact. Keep all approved public sites in deploy-tin-tech-pages.yml.
