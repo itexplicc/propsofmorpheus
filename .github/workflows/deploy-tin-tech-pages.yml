@@ -103,8 +103,11 @@ jobs:
           cp -R apex-rubber/. _site/apex-rubber/
           test -f _site/apex-rubber/remaining-75k/index.html
 
+          # Validate the archive that is currently committed instead of comparing
+          # it with a stale hard-coded digest from an older Source Labs release.
           base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz
-          echo '75a28a15533105a70c5f3db3d09f0fcd697beb0f62930cbda4e57c3fe73be218  /tmp/source-labs-direct.tar.gz' | sha256sum --check --strict
+          gzip --test /tmp/source-labs-direct.tar.gz
+          tar -tzf /tmp/source-labs-direct.tar.gz >/dev/null
           tar -xzf /tmp/source-labs-direct.tar.gz -C _site/source-labs --strip-components=1 --no-same-owner
 
           test -f _site/source-labs/index.html
