@@ -38,20 +38,9 @@ jobs:
 
           rm -rf /tmp/source-labs-check
           mkdir -p /tmp/source-labs-check
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64
-          import re
-
-          raw = Path('source-labs-build/direct-release.b64').read_bytes()
-          marker = raw.find(b'H4sI')
-          if marker < 0:
-              raise SystemExit('Source Labs archive does not contain a gzip base64 marker.')
-          payload = re.sub(rb'[^A-Za-z0-9+/]', b'', raw[marker:])
-          payload += b'=' * (-len(payload) % 4)
-          decoded = base64.b64decode(payload, validate=False)
-          Path('/tmp/source-labs-direct.tar.gz').write_bytes(decoded)
-          PY
+          rm -f /tmp/source-labs-direct.tar.gz /tmp/source-labs-decode.err
+          base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz 2>/tmp/source-labs-decode.err || true
+          test -s /tmp/source-labs-direct.tar.gz
           gzip --test /tmp/source-labs-direct.tar.gz
           tar -tzf /tmp/source-labs-direct.tar.gz >/dev/null
           tar -xzf /tmp/source-labs-direct.tar.gz -C /tmp/source-labs-check --strip-components=1 --no-same-owner
