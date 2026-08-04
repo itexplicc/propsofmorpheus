@@ -35,4 +35,19 @@ jobs:
           grep -q "saad-five-year-plan" .github/workflows/deploy-tin-tech-pages.yml
           grep -q "galle-spice" .github/workflows/deploy-tin-tech-pages.yml
           grep -q "Verify consolidated public pages" .github/workflows/deploy-tin-tech-pages.yml
-          echo 'Consolidated Pages workflow validation passed.'
+
+          rm -rf /tmp/source-labs-check
+          mkdir -p /tmp/source-labs-check
+          base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz
+          gzip --test /tmp/source-labs-direct.tar.gz
+          tar -tzf /tmp/source-labs-direct.tar.gz >/dev/null
+          tar -xzf /tmp/source-labs-direct.tar.gz -C /tmp/source-labs-check --strip-components=1 --no-same-owner
+          test -f /tmp/source-labs-check/index.html
+          test -f /tmp/source-labs-check/admin/index.html
+          test -s /tmp/source-labs-check/assets/styles.css
+          test -s /tmp/source-labs-check/assets/redesign.js
+          grep -q 'Source Labs' /tmp/source-labs-check/index.html
+          grep -q 'Source Labs visual system' /tmp/source-labs-check/assets/styles.css
+          grep -q 'SOURCE BRIEF' /tmp/source-labs-check/assets/redesign.js
+
+          echo 'Consolidated Pages workflow and Source Labs archive validation passed.'
