@@ -1,0 +1,1 @@
+This change consolidates GitHub Pages publishing so Tin Tech, Galle Spice, Source Labs, QAJ, Hi-Line, MAKO, APEX and the five-year plan are deployed together. It removes the standalone five-year-plan Pages workflow that was replacing all other public folders.
