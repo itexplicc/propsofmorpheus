@@ -1,6 +1,0 @@
-Consolidated Pages deployment plan
-
-- Tin Tech direct index remains in the public artifact.
-- Galle Spice and Saad five-year plan join the existing public sites artifact.
-- The conflicting standalone five-year-plan Pages workflow is removed.
-- Deployment verifies the exact Tin Tech index.html URL before recording success.
