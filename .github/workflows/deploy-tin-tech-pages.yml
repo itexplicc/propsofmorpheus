@@ -11,7 +11,7 @@ on:
       - 'qaj-young-hearts/**'
       - 'apex-rubber/**'
       - 'source-labs/**'
-      - 'source-labs-build/direct-release.b64'
+      - 'source-labs-build/**'
       - 'saad-five-year-plan/**'
       - 'galle-spice/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
@@ -103,12 +103,15 @@ jobs:
           cp -R apex-rubber/. _site/apex-rubber/
           test -f _site/apex-rubber/remaining-75k/index.html
 
-          # Validate the archive that is currently committed instead of comparing
-          # it with a stale hard-coded digest from an older Source Labs release.
-          base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz
-          gzip --test /tmp/source-labs-direct.tar.gz
-          tar -tzf /tmp/source-labs-direct.tar.gz >/dev/null
-          tar -xzf /tmp/source-labs-direct.tar.gz -C _site/source-labs --strip-components=1 --no-same-owner
+          # Reassemble and verify the complete six-part Source Labs xz release.
+          for part in source-labs-build/release-20260730.tar.xz.b64.{00..05}; do
+            test -s "$part"
+          done
+          cat source-labs-build/release-20260730.tar.xz.b64.{00..05} > /tmp/source-labs-release.b64
+          base64 --decode /tmp/source-labs-release.b64 > /tmp/source-labs-release.tar.xz
+          xz --test /tmp/source-labs-release.tar.xz
+          tar -tJf /tmp/source-labs-release.tar.xz >/dev/null
+          tar -xJf /tmp/source-labs-release.tar.xz -C _site/source-labs --strip-components=1 --no-same-owner
 
           test -f _site/source-labs/index.html
           test -f _site/source-labs/products.html
@@ -117,15 +120,10 @@ jobs:
           test -f _site/source-labs/admin/index.html
           test -s _site/source-labs/assets/app.js
           test -s _site/source-labs/assets/styles.css
-          test -s _site/source-labs/assets/redesign.js
           test -s _site/source-labs/admin/admin.js
           grep -q 'Source Labs' _site/source-labs/index.html
           grep -q 'aunqmysckjuucmvzqxjp.supabase.co' _site/source-labs/assets/config.js
-          grep -q 'Source Labs visual system' _site/source-labs/assets/styles.css
-          grep -q 'SOURCE BRIEF' _site/source-labs/assets/redesign.js
-          grep -q 'assets/redesign.js' _site/source-labs/index.html
           node --check _site/source-labs/assets/app.js
-          node --check _site/source-labs/assets/redesign.js
           node --check _site/source-labs/admin/admin.js
           node --check _site/source-labs/assets/config.js
 
@@ -188,18 +186,18 @@ jobs:
               && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/portfolio.html" -o /tmp/tin-tech-portfolio.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}galle-spice/index.html" -o /tmp/galle-spice-index.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}saad-five-year-plan/index.html" -o /tmp/five-year-index.html \
-              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/" -o /tmp/source-labs-public.html \
-              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/admin/" -o /tmp/source-labs-admin.html \
-              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/styles.css" -o /tmp/source-labs-styles.css \
-              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/redesign.js" -o /tmp/source-labs-redesign.js \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/index.html" -o /tmp/source-labs-public.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/services.html" -o /tmp/source-labs-services.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/admin/index.html" -o /tmp/source-labs-admin.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/config.js" -o /tmp/source-labs-config.js \
               && grep -q 'TIN TECH PACKAGING' /tmp/tin-tech-index.html \
               && grep -q 'Product portfolio' /tmp/tin-tech-portfolio.html \
               && grep -q 'Galle Spice' /tmp/galle-spice-index.html \
               && grep -q 'Morpheus' /tmp/five-year-index.html \
-              && grep -q 'assets/redesign.js' /tmp/source-labs-public.html \
-              && grep -q 'Source Labs visual system' /tmp/source-labs-styles.css \
-              && grep -q 'SOURCE BRIEF' /tmp/source-labs-redesign.js \
-              && grep -q 'Source Labs' /tmp/source-labs-admin.html; then
+              && grep -q 'Source Labs' /tmp/source-labs-public.html \
+              && grep -q 'Source Labs' /tmp/source-labs-services.html \
+              && grep -q 'Source Labs' /tmp/source-labs-admin.html \
+              && grep -q 'aunqmysckjuucmvzqxjp.supabase.co' /tmp/source-labs-config.js; then
               echo 'Consolidated Pages verification passed.'
               exit 0
             fi
