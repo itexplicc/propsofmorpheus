@@ -28,7 +28,6 @@ jobs:
           test -f saad-five-year-plan/index.html
           test -f galle-spice/index.html
           test -f galle-spice/admin/index.html
-          test -f source-labs-build/direct-release.b64
           test ! -f .github/workflows/deploy-five-year-plan.yml
           grep -q "cp -R tin-tech-packaging/. _site/tin-tech-packaging/" .github/workflows/deploy-tin-tech-pages.yml
           grep -q "tin-tech-packaging/index.html" .github/workflows/deploy-tin-tech-pages.yml
@@ -38,9 +37,11 @@ jobs:
 
           rm -rf /tmp/source-labs-check
           mkdir -p /tmp/source-labs-check
-          rm -f /tmp/source-labs-direct.tar.gz /tmp/source-labs-decode.err
-          base64 --decode source-labs-build/direct-release.b64 > /tmp/source-labs-direct.tar.gz 2>/tmp/source-labs-decode.err || true
-          test -s /tmp/source-labs-direct.tar.gz
+          curl --fail --silent --show-error --location \
+            'https://raw.githubusercontent.com/itexplicc/propsofmorpheus/bffff490f83589956bd51352c7b7032e137cdd33/source-labs-build/direct-release.b64' \
+            -o /tmp/source-labs-direct.b64
+          base64 --decode /tmp/source-labs-direct.b64 > /tmp/source-labs-direct.tar.gz
+          echo '75a28a15533105a70c5f3db3d09f0fcd697beb0f62930cbda4e57c3fe73be218  /tmp/source-labs-direct.tar.gz' | sha256sum --check --strict
           gzip --test /tmp/source-labs-direct.tar.gz
           tar -tzf /tmp/source-labs-direct.tar.gz >/dev/null
           tar -xzf /tmp/source-labs-direct.tar.gz -C /tmp/source-labs-check --strip-components=1 --no-same-owner
@@ -52,4 +53,4 @@ jobs:
           grep -q 'Source Labs visual system' /tmp/source-labs-check/assets/styles.css
           grep -q 'SOURCE BRIEF' /tmp/source-labs-check/assets/redesign.js
 
-          echo 'Consolidated Pages workflow and Source Labs archive validation passed.'
+          echo 'Consolidated Pages workflow and verified Source Labs release validation passed.'
