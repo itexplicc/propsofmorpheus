@@ -1,4 +1,4 @@
-name: Deploy Public Brand Sites to GitHub Pages
+name: Deploy Consolidated Public Sites to GitHub Pages
 
 on:
   push:
@@ -12,6 +12,8 @@ on:
       - 'apex-rubber/**'
       - 'source-labs/**'
       - 'source-labs-build/direct-release.b64'
+      - 'saad-five-year-plan/**'
+      - 'galle-spice/**'
       - '.github/workflows/deploy-tin-tech-pages.yml'
   workflow_dispatch:
 
@@ -43,30 +45,27 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/tin-tech-packaging
-          mkdir -p _site/mako-pet-food
-          mkdir -p _site/nautical-naturals-brand
-          mkdir -p _site/nautical-naturals
-          mkdir -p _site/hi-line-auto
-          mkdir -p _site/qaj-young-hearts
-          mkdir -p _site/apex-rubber
-          mkdir -p _site/source-labs
+          mkdir -p \
+            _site/tin-tech-packaging \
+            _site/mako-pet-food \
+            _site/nautical-naturals-brand \
+            _site/nautical-naturals \
+            _site/hi-line-auto \
+            _site/qaj-young-hearts \
+            _site/apex-rubber \
+            _site/source-labs \
+            _site/saad-five-year-plan \
+            _site/galle-spice
 
-          cp tin-tech-packaging/index.html _site/tin-tech-packaging/index.html
-          cp tin-tech-packaging/about.html _site/tin-tech-packaging/about.html
-          cp tin-tech-packaging/capabilities.html _site/tin-tech-packaging/capabilities.html
-          cp tin-tech-packaging/portfolio.html _site/tin-tech-packaging/portfolio.html
-          cp tin-tech-packaging/product.html _site/tin-tech-packaging/product.html
-          cp tin-tech-packaging/contact.html _site/tin-tech-packaging/contact.html
-          cp tin-tech-packaging/privacy.html _site/tin-tech-packaging/privacy.html
-          cp tin-tech-packaging/terms.html _site/tin-tech-packaging/terms.html
-          cp tin-tech-packaging/404.html _site/tin-tech-packaging/404.html
-          cp tin-tech-packaging/robots.txt _site/tin-tech-packaging/robots.txt
-          cp tin-tech-packaging/sitemap.xml _site/tin-tech-packaging/sitemap.xml
-          cp tin-tech-packaging/tin-tech-logo.svg _site/tin-tech-packaging/tin-tech-logo.svg
-          cp tin-tech-packaging/tin-tech-logo-light.svg _site/tin-tech-packaging/tin-tech-logo-light.svg
-          cp -R tin-tech-packaging/assets _site/tin-tech-packaging/assets
-          cp -R tin-tech-packaging/admin _site/tin-tech-packaging/admin
+          # Tin Tech: publish the complete current folder so direct files such as
+          # /tin-tech-packaging/index.html always exist in the Pages artifact.
+          cp -R tin-tech-packaging/. _site/tin-tech-packaging/
+          test -f _site/tin-tech-packaging/index.html
+          test -f _site/tin-tech-packaging/portfolio.html
+          test -f _site/tin-tech-packaging/product.html
+          test -f _site/tin-tech-packaging/admin/index.html
+          test -f _site/tin-tech-packaging/assets/js/site.js
+          grep -q 'TIN TECH PACKAGING' _site/tin-tech-packaging/index.html
 
           python3 mako-site-source/run-build.py _site/mako-pet-food
           test -f _site/mako-pet-food/index.html
@@ -127,6 +126,14 @@ jobs:
           node --check _site/source-labs/admin/admin.js
           node --check _site/source-labs/assets/config.js
 
+          cp -R saad-five-year-plan/. _site/saad-five-year-plan/
+          test -f _site/saad-five-year-plan/index.html
+
+          cp -R galle-spice/. _site/galle-spice/
+          test -f _site/galle-spice/index.html
+          test -f _site/galle-spice/admin/index.html
+          grep -q 'Galle Spice' _site/galle-spice/index.html
+
           touch _site/.nojekyll
 
           cat > _site/index.html <<'HTML'
@@ -135,7 +142,7 @@ jobs:
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Public Brand Sites</title>
+            <title>Public Sites</title>
             <style>
               body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;padding:48px;background:#f5f3ee;color:#12324a}
               main{max-width:760px;margin:auto}
@@ -144,12 +151,15 @@ jobs:
           </head>
           <body>
             <main>
-              <h1>Public Brand Sites</h1>
+              <h1>Public Sites</h1>
+              <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
+              <a href="./galle-spice/">Galle Spice</a>
               <a href="./source-labs/">Source Labs</a>
               <a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a>
               <a href="./hi-line-auto/">Hi-Line Auto</a>
               <a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a>
-              <a href="./tin-tech-packaging/">Tin Tech Packaging</a>
+              <a href="./saad-five-year-plan/">Morpheus Five-Year Command Plan</a>
+              <a href="./apex-rubber/remaining-75k/">APEX Remaining 75K Plan</a>
             </main>
           </body>
           </html>
@@ -164,29 +174,35 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify Source Labs public pages
+      - name: Verify consolidated public pages
         shell: bash
         env:
-          PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}source-labs/
-          ADMIN_URL: ${{ steps.deployment.outputs.page_url }}source-labs/admin/
-          CSS_URL: ${{ steps.deployment.outputs.page_url }}source-labs/assets/styles.css
-          REDESIGN_URL: ${{ steps.deployment.outputs.page_url }}source-labs/assets/redesign.js
+          ROOT_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -euo pipefail
-          for attempt in {1..20}; do
-            if curl --fail --silent --show-error --location "$PUBLIC_URL" -o /tmp/source-labs-public.html \
-              && curl --fail --silent --show-error --location "$ADMIN_URL" -o /tmp/source-labs-admin.html \
-              && curl --fail --silent --show-error --location "$CSS_URL" -o /tmp/source-labs-styles.css \
-              && curl --fail --silent --show-error --location "$REDESIGN_URL" -o /tmp/source-labs-redesign.js \
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/index.html" -o /tmp/tin-tech-index.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/portfolio.html" -o /tmp/tin-tech-portfolio.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}galle-spice/index.html" -o /tmp/galle-spice-index.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}saad-five-year-plan/index.html" -o /tmp/five-year-index.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/" -o /tmp/source-labs-public.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/admin/" -o /tmp/source-labs-admin.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/styles.css" -o /tmp/source-labs-styles.css \
+              && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/redesign.js" -o /tmp/source-labs-redesign.js \
+              && grep -q 'TIN TECH PACKAGING' /tmp/tin-tech-index.html \
+              && grep -q 'Product portfolio' /tmp/tin-tech-portfolio.html \
+              && grep -q 'Galle Spice' /tmp/galle-spice-index.html \
+              && grep -q 'Morpheus' /tmp/five-year-index.html \
               && grep -q 'assets/redesign.js' /tmp/source-labs-public.html \
               && grep -q 'Source Labs visual system' /tmp/source-labs-styles.css \
               && grep -q 'SOURCE BRIEF' /tmp/source-labs-redesign.js \
               && grep -q 'Source Labs' /tmp/source-labs-admin.html; then
+              echo 'Consolidated Pages verification passed.'
               exit 0
             fi
             sleep 4
           done
-          echo 'Source Labs refined public verification failed.' >&2
+          echo 'Consolidated public Pages verification failed.' >&2
           exit 1
 
       - name: Record successful Pages deployment
@@ -208,12 +224,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             const body = [
-              'Public brand sites deployment completed successfully.',
-              'Source Labs refined interface verification passed.',
+              'Consolidated public sites deployment completed successfully.',
+              'Tin Tech direct index verification passed.',
+              'Galle Spice, five-year plan and Source Labs verification passed.',
               `Source commit: ${context.sha}`,
               `Pages URL: ${{ steps.deployment.outputs.page_url }}`,
-              `Source Labs URL: ${{ steps.deployment.outputs.page_url }}source-labs/`,
-              `Source Labs Admin URL: ${{ steps.deployment.outputs.page_url }}source-labs/admin/`,
+              `Tin Tech URL: ${{ steps.deployment.outputs.page_url }}tin-tech-packaging/index.html`,
               `Completed: ${new Date().toISOString()}`,
               ''
             ].join('\n');
@@ -221,7 +237,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path,
-              message: 'Record successful refined Source Labs deployment',
+              message: 'Record successful consolidated Pages deployment',
               content: Buffer.from(body).toString('base64'),
               branch: 'main',
               ...(sha ? { sha } : {})
