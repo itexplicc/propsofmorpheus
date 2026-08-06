@@ -1,9 +1,9 @@
 name: Replace Tin Tech Public Email
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/replace-tin-tech-sales-email-20260806
+      - main
     paths:
       - '.github/workflows/replace-tin-tech-email.yml'
 
