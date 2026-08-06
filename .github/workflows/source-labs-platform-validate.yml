@@ -1,0 +1,63 @@
+name: Validate Source Labs Portal and Page Builder
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'source-labs-current/**'
+      - '.github/workflows/source-labs-live-repair.yml'
+      - '.github/workflows/source-labs-platform-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required files and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            source-labs-current/portal/index.html
+            source-labs-current/portal/portal.css
+            source-labs-current/portal/portal.js
+            source-labs-current/landing.html
+            source-labs-current/assets/landing-builder.js
+            source-labs-current/assets/landing-builder.css
+            source-labs-current/assets/landing-builder-fixes.css
+            source-labs-current/assets/landing-integrations.js
+            source-labs-current/assets/landing-integrations.css
+            source-labs-current/admin/portal-admin.js
+            source-labs-current/admin/portal-admin.css
+            source-labs-current/admin/landing-admin.js
+            source-labs-current/admin/landing-admin.css
+          )
+          for file in "${required[@]}"; do
+            test -s "$file" || { echo "Missing required file: $file" >&2; exit 1; }
+          done
+          node --check source-labs-current/portal/portal.js
+          node --check source-labs-current/assets/landing-builder.js
+          node --check source-labs-current/assets/landing-integrations.js
+          node --check source-labs-current/admin/portal-admin.js
+          node --check source-labs-current/admin/landing-admin.js
+          grep -q 'client_projects' source-labs-current/portal/portal.js
+          grep -q 'landing_pages' source-labs-current/assets/landing-builder.js
+          grep -q 'Advisor client portal' source-labs-current/admin/portal-admin.js
+          grep -q 'Landing page builder' source-labs-current/admin/landing-admin.js
+          grep -q 'portal-admin.js' .github/workflows/source-labs-live-repair.yml
+          grep -q 'landing-admin.js' .github/workflows/source-labs-live-repair.yml
+          if grep -Rqi 'service_role' source-labs-current/assets source-labs-current/admin source-labs-current/portal; then
+            echo 'Privileged Supabase key reference detected in browser files.' >&2
+            exit 1
+          fi
+      - name: Validate HTML references
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'portal.js' source-labs-current/portal/index.html
+          grep -q 'landing-builder.js' source-labs-current/landing.html
+          grep -q 'landing-builder-fixes.css' source-labs-current/landing.html

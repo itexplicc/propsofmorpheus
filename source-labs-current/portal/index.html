@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" data-portal-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071b2d">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Source Labs Client Portal</title>
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="portal.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.9/dist/umd/supabase.min.js" defer crossorigin="anonymous"></script>
+  <script src="../assets/config.js" defer></script>
+  <script src="portal.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#portal-main">Skip to portal content</a>
+  <div id="portal-announcer" class="sr-only" aria-live="polite"></div>
+
+  <section id="portal-login" class="portal-login">
+    <div class="login-brand-panel">
+      <a class="portal-brand" href="../index.html" aria-label="Source Labs website">
+        <img src="../assets/logo.svg" alt="Source Labs">
+      </a>
+      <div class="login-story">
+        <p class="eyebrow">Advisor dashboard</p>
+        <h1>Your business journey, clearly tracked.</h1>
+        <p>Follow progress, exchange documents, speak with your Source Labs advisor and stay ahead of important deadlines from one secure place.</p>
+      </div>
+      <div class="login-benefits" aria-label="Portal benefits">
+        <span>Live progress</span><span>Private documents</span><span>Advisor messages</span><span>Compliance reminders</span>
+      </div>
+    </div>
+    <div class="login-form-panel">
+      <form id="portal-login-form" class="login-card" novalidate>
+        <p class="eyebrow">Secure client access</p>
+        <h2>Open your dashboard</h2>
+        <p class="muted">Use the email and temporary password provided by Source Labs.</p>
+        <label class="field"><span>Email</span><input id="portal-email" name="email" type="email" autocomplete="email" required></label>
+        <label class="field"><span>Password</span><input id="portal-password" name="password" type="password" autocomplete="current-password" required minlength="8"></label>
+        <label class="check"><input id="portal-show-password" type="checkbox"> Show password</label>
+        <div id="portal-login-status" class="form-status" role="status"></div>
+        <button class="button button-primary" type="submit">Open dashboard</button>
+        <button class="text-button" id="portal-reset-password" type="button">Send a password-reset email</button>
+        <p class="privacy-note">Client information and documents are restricted to authorised users and Source Labs administrators.</p>
+      </form>
+    </div>
+  </section>
+
+  <div id="portal-app" class="portal-app hidden">
+    <aside class="portal-sidebar" id="portal-sidebar">
+      <div class="sidebar-head">
+        <a class="portal-brand portal-brand-light" href="../index.html"><img src="../assets/logo.svg" alt="Source Labs"></a>
+        <button id="portal-sidebar-close" class="icon-button sidebar-close" type="button" aria-label="Close projects">×</button>
+      </div>
+      <div class="client-card" id="portal-client-card"></div>
+      <div class="sidebar-label">Your projects</div>
+      <nav id="portal-projects" class="project-nav" aria-label="Client projects"></nav>
+      <div class="sidebar-footer">
+        <button id="portal-account-button" type="button">Account & password</button>
+        <a href="../contact.html" target="_blank" rel="noopener">Contact Source Labs ↗</a>
+        <button id="portal-logout" type="button">Sign out</button>
+      </div>
+    </aside>
+
+    <main id="portal-main" class="portal-main" tabindex="-1">
+      <header class="portal-topbar">
+        <div class="topbar-left">
+          <button id="portal-sidebar-open" class="icon-button mobile-only" type="button" aria-label="Open projects">☰</button>
+          <div><small>Source Labs Advisor Dashboard</small><strong id="portal-project-title">Your dashboard</strong></div>
+        </div>
+        <div class="topbar-actions">
+          <button id="portal-language" class="utility-button" type="button">සිං</button>
+          <button id="portal-simple" class="utility-button" type="button">Simple mode</button>
+          <button id="portal-notifications-button" class="notification-button" type="button" aria-label="Notifications"><span>Notifications</span><b id="portal-notification-count">0</b></button>
+        </div>
+      </header>
+      <div id="portal-content" class="portal-content"><div class="loading">Loading your secure dashboard…</div></div>
+    </main>
+  </div>
+
+  <div id="portal-modal-root"></div>
+  <div id="portal-toast-root" class="toast-root" aria-live="polite"></div>
+</body>
+</html>

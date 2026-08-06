@@ -1,4 +1,4 @@
-name: Source Labs Category Experience Deploy
+name: Source Labs Portal and Page Builder Deploy
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: source-labs-category-experience
+  group: source-labs-platform
   cancel-in-progress: false
 
 jobs:
@@ -38,14 +38,19 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          public_css = '<link rel="stylesheet" href="assets/v3.css">'
-          public_js = '<script src="assets/category-discovery.js" defer></script>'
+          public_assets = [
+              '<link rel="stylesheet" href="assets/v3.css">',
+              '<link rel="stylesheet" href="assets/landing-integrations.css">',
+              '<script src="assets/category-discovery.js" defer></script>',
+              '<script src="assets/landing-integrations.js" defer></script>',
+          ]
           for path in Path('source-labs').glob('*.html'):
+              if path.name == 'landing.html':
+                  continue
               text = path.read_text(encoding='utf-8')
-              if public_css not in text:
-                  text = text.replace('</head>', f'  {public_css}\n</head>')
-              if public_js not in text:
-                  text = text.replace('</head>', f'  {public_js}\n</head>')
+              for asset in public_assets:
+                  if asset not in text:
+                      text = text.replace('</head>', f'  {asset}\n</head>')
               path.write_text(text, encoding='utf-8')
 
           app_path = Path('source-labs/assets/app.js')
@@ -56,12 +61,17 @@ jobs:
 
           admin_path = Path('source-labs/admin/index.html')
           admin = admin_path.read_text(encoding='utf-8')
-          admin_css = '<link rel="stylesheet" href="admin-v3.css">'
-          admin_js = '<script src="admin-v3.js" defer></script>'
-          if admin_css not in admin:
-              admin = admin.replace('</head>', f'  {admin_css}\n</head>')
-          if admin_js not in admin:
-              admin = admin.replace('</head>', f'  {admin_js}\n</head>')
+          admin_assets = [
+              '<link rel="stylesheet" href="admin-v3.css">',
+              '<link rel="stylesheet" href="portal-admin.css">',
+              '<link rel="stylesheet" href="landing-admin.css">',
+              '<script src="admin-v3.js" defer></script>',
+              '<script src="portal-admin.js" defer></script>',
+              '<script src="landing-admin.js" defer></script>',
+          ]
+          for asset in admin_assets:
+              if asset not in admin:
+                  admin = admin.replace('</head>', f'  {asset}\n</head>')
           admin_path.write_text(admin, encoding='utf-8')
           PY
 
@@ -70,21 +80,34 @@ jobs:
             source-labs/products.html
             source-labs/services.html
             source-labs/category.html
+            source-labs/landing.html
             source-labs/about.html
             source-labs/contact.html
             source-labs/privacy.html
             source-labs/terms.html
+            source-labs/portal/index.html
+            source-labs/portal/portal.css
+            source-labs/portal/portal.js
             source-labs/assets/styles.css
             source-labs/assets/app.js
             source-labs/assets/redesign.js
             source-labs/assets/v3.css
             source-labs/assets/category-discovery.js
+            source-labs/assets/landing-integrations.js
+            source-labs/assets/landing-integrations.css
+            source-labs/assets/landing-builder.js
+            source-labs/assets/landing-builder.css
+            source-labs/assets/landing-builder-fixes.css
             source-labs/assets/config.js
             source-labs/admin/index.html
             source-labs/admin/admin.css
             source-labs/admin/admin.js
             source-labs/admin/admin-v3.css
             source-labs/admin/admin-v3.js
+            source-labs/admin/portal-admin.css
+            source-labs/admin/portal-admin.js
+            source-labs/admin/landing-admin.css
+            source-labs/admin/landing-admin.js
           )
           for file in "${required[@]}"; do
             test -s "$file" || { echo "Missing required file: $file" >&2; exit 1; }
@@ -93,16 +116,26 @@ jobs:
           node --check source-labs/assets/app.js
           node --check source-labs/assets/redesign.js
           node --check source-labs/assets/category-discovery.js
+          node --check source-labs/assets/landing-integrations.js
+          node --check source-labs/assets/landing-builder.js
+          node --check source-labs/portal/portal.js
           node --check source-labs/admin/admin.js
           node --check source-labs/admin/admin-v3.js
+          node --check source-labs/admin/portal-admin.js
+          node --check source-labs/admin/landing-admin.js
+
           grep -q 'Source Labs category discovery' source-labs/assets/v3.css
           grep -q 'category_landings' source-labs/assets/category-discovery.js
-          grep -q 'Category landing pages' source-labs/admin/admin-v3.js
-          grep -q 'assets/category-discovery.js' source-labs/products.html
-          grep -q 'assets/category-discovery.js' source-labs/services.html
-          grep -q 'admin-v3.js' source-labs/admin/index.html
+          grep -q 'landing_pages' source-labs/assets/landing-builder.js
+          grep -q 'client_projects' source-labs/portal/portal.js
+          grep -q 'Advisor client portal' source-labs/admin/portal-admin.js
+          grep -q 'Landing page builder' source-labs/admin/landing-admin.js
+          grep -q 'assets/landing-integrations.js' source-labs/products.html
+          grep -q 'assets/landing-integrations.js' source-labs/services.html
+          grep -q 'portal-admin.js' source-labs/admin/index.html
+          grep -q 'landing-admin.js' source-labs/admin/index.html
           grep -q 'aunqmysckjuucmvzqxjp.supabase.co' source-labs/assets/config.js
-          if grep -qi 'service_role' source-labs/assets/config.js; then
+          if grep -Rqi 'service_role' source-labs/assets source-labs/admin source-labs/portal; then
             echo 'A privileged Supabase key must never be shipped to the browser.' >&2
             exit 1
           fi
@@ -128,7 +161,7 @@ jobs:
           cp -R source-labs/. _site/source-labs/
           touch _site/.nojekyll
           cat > _site/index.html <<'HTML'
-          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Public Brand Sites</title><style>body{font-family:system-ui;margin:0;padding:48px;background:#f5f3ee;color:#12324a}main{max-width:760px;margin:auto}a{display:block;margin:14px 0;padding:18px 20px;border:1px solid #d8d2c8;border-radius:16px;background:#fff;color:#12324a;text-decoration:none;font-weight:700}</style></head><body><main><h1>Public Brand Sites</h1><a href="./source-labs/">Source Labs</a><a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a><a href="./hi-line-auto/">Hi-Line Auto</a><a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a><a href="./tin-tech-packaging/">Tin Tech Packaging</a></main></body></html>
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Public Brand Sites</title><style>body{font-family:system-ui;margin:0;padding:48px;background:#f5f3ee;color:#12324a}main{max-width:760px;margin:auto}a{display:block;margin:14px 0;padding:18px 20px;border:1px solid #d8d2c8;border-radius:16px;background:#fff;color:#12324a;text-decoration:none;font-weight:700}</style></head><body><main><h1>Public Brand Sites</h1><a href="./source-labs/">Source Labs</a><a href="./source-labs/portal/">Source Labs Client Portal</a><a href="./qaj-young-hearts/">Quranic Arabic for Young Hearts</a><a href="./hi-line-auto/">Hi-Line Auto</a><a href="./mako-pet-food/">MAKO Premium Dog &amp; Cat Food</a><a href="./tin-tech-packaging/">Tin Tech Packaging</a></main></body></html>
           HTML
 
       - name: Upload Pages artifact
@@ -140,46 +173,55 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify public, category and admin experiences
+      - name: Verify website, portal, builder and admin
         shell: bash
         run: |
           set -euo pipefail
           base='https://itexplicc.github.io/propsofmorpheus/source-labs'
           for attempt in $(seq 1 36); do
-            public_code="$(curl -L --silent --show-error -o /tmp/products.html -w '%{http_code}' "${base}/products.html?release=${GITHUB_SHA}" || true)"
+            products_code="$(curl -L --silent --show-error -o /tmp/products.html -w '%{http_code}' "${base}/products.html?release=${GITHUB_SHA}" || true)"
             category_code="$(curl -L --silent --show-error -o /tmp/category.html -w '%{http_code}' "${base}/category.html?slug=packaging-materials&release=${GITHUB_SHA}" || true)"
+            portal_code="$(curl -L --silent --show-error -o /tmp/portal.html -w '%{http_code}' "${base}/portal/?release=${GITHUB_SHA}" || true)"
+            landing_code="$(curl -L --silent --show-error -o /tmp/landing.html -w '%{http_code}' "${base}/landing.html?slug=unpublished-smoke&release=${GITHUB_SHA}" || true)"
             admin_code="$(curl -L --silent --show-error -o /tmp/admin.html -w '%{http_code}' "${base}/admin/?release=${GITHUB_SHA}" || true)"
-            public_js_code="$(curl -L --silent --show-error -o /tmp/category-discovery.js -w '%{http_code}' "${base}/assets/category-discovery.js?release=${GITHUB_SHA}" || true)"
-            admin_js_code="$(curl -L --silent --show-error -o /tmp/admin-v3.js -w '%{http_code}' "${base}/admin/admin-v3.js?release=${GITHUB_SHA}" || true)"
-            css_code="$(curl -L --silent --show-error -o /tmp/v3.css -w '%{http_code}' "${base}/assets/v3.css?release=${GITHUB_SHA}" || true)"
-            if [ "$public_code" = 200 ] && [ "$category_code" = 200 ] && [ "$admin_code" = 200 ] && [ "$public_js_code" = 200 ] && [ "$admin_js_code" = 200 ] && [ "$css_code" = 200 ] \
-              && grep -q 'assets/category-discovery.js' /tmp/products.html \
+            portal_js_code="$(curl -L --silent --show-error -o /tmp/portal.js -w '%{http_code}' "${base}/portal/portal.js?release=${GITHUB_SHA}" || true)"
+            landing_js_code="$(curl -L --silent --show-error -o /tmp/landing-builder.js -w '%{http_code}' "${base}/assets/landing-builder.js?release=${GITHUB_SHA}" || true)"
+            portal_admin_js_code="$(curl -L --silent --show-error -o /tmp/portal-admin.js -w '%{http_code}' "${base}/admin/portal-admin.js?release=${GITHUB_SHA}" || true)"
+            landing_admin_js_code="$(curl -L --silent --show-error -o /tmp/landing-admin.js -w '%{http_code}' "${base}/admin/landing-admin.js?release=${GITHUB_SHA}" || true)"
+            if [ "$products_code" = 200 ] && [ "$category_code" = 200 ] && [ "$portal_code" = 200 ] && [ "$landing_code" = 200 ] && [ "$admin_code" = 200 ] && [ "$portal_js_code" = 200 ] && [ "$landing_js_code" = 200 ] && [ "$portal_admin_js_code" = 200 ] && [ "$landing_admin_js_code" = 200 ] \
+              && grep -q 'assets/landing-integrations.js' /tmp/products.html \
               && grep -q 'data-page="category"' /tmp/category.html \
-              && grep -q 'admin-v3.js' /tmp/admin.html \
-              && grep -q 'category_landings' /tmp/category-discovery.js \
-              && grep -q 'Category landing pages' /tmp/admin-v3.js \
-              && grep -q 'v3-menu-backdrop' /tmp/v3.css; then
-              echo 'Verified Source Labs category experience deployment.'
+              && grep -q 'Advisor dashboard' /tmp/portal.html \
+              && grep -q 'assets/landing-builder.js' /tmp/landing.html \
+              && grep -q 'portal-admin.js' /tmp/admin.html \
+              && grep -q 'landing-admin.js' /tmp/admin.html \
+              && grep -q 'client_projects' /tmp/portal.js \
+              && grep -q 'landing_pages' /tmp/landing-builder.js \
+              && grep -q 'Advisor client portal' /tmp/portal-admin.js \
+              && grep -q 'Landing page builder' /tmp/landing-admin.js; then
+              echo 'Verified Source Labs portal and page-builder deployment.'
               break
             fi
-            if [ "$attempt" = 36 ]; then echo 'Could not verify Source Labs category experience deployment.' >&2; exit 1; fi
+            if [ "$attempt" = 36 ]; then echo 'Could not verify Source Labs portal and page-builder deployment.' >&2; exit 1; fi
             sleep 10
           done
 
           mkdir -p .deploy-status
           cat > .deploy-status/source-labs-live.txt <<EOF2
-          Source Labs category experience deployment verified successfully.
+          Source Labs advisor portal and landing-page builder deployment verified successfully.
           Source commit: ${GITHUB_SHA}
           Public URL: ${base}/
           Products URL: ${base}/products.html
           Services URL: ${base}/services.html
           Category URL pattern: ${base}/category.html?slug=<category-slug>
+          Custom landing URL pattern: ${base}/landing.html?slug=<landing-slug>
+          Client portal URL: ${base}/portal/
           Admin URL: ${base}/admin/
-          Experience: category-first-media-v3
+          Experience: advisor-portal-universal-pages-v1
           Completed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
           EOF2
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add .deploy-status/source-labs-live.txt
-          git commit -m 'Record verified Source Labs category deployment'
+          git commit -m 'Record verified Source Labs platform deployment'
           git push origin HEAD:main
