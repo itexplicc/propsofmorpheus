@@ -1,0 +1,65 @@
+name: Validate Tin Tech Public Email
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tin-tech-packaging/**'
+      - '.github/workflows/deploy-tin-tech-pages.yml'
+      - '.github/workflows/validate-tin-tech-public-email.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Tin Tech email artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          legacy_email="$(printf '%s@%s' 'hockeyundergroundusa' 'gmail.com')"
+          public_email='sales@tintechpackaging.com'
+
+          test -s tin-tech-packaging/assets/js/contact-email-guard-v1.js
+          node --check tin-tech-packaging/assets/js/contact-email-guard-v1.js
+          grep -q "mailto:${public_email}" tin-tech-packaging/privacy.html
+          grep -q "mailto:${public_email}" tin-tech-packaging/terms.html
+
+          rm -rf /tmp/tin-tech-site
+          mkdir -p /tmp/tin-tech-site
+          cp -R tin-tech-packaging/. /tmp/tin-tech-site/
+
+          while IFS= read -r -d '' file; do
+            sed -i "s/${legacy_email}/${public_email}/g" "$file"
+          done < <(grep -RIlZ --exclude='contact-email-guard-v1.js' "$legacy_email" /tmp/tin-tech-site || true)
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('/tmp/tin-tech-site')
+          needle = '<script defer src="./assets/js/api-v3.js"></script>'
+          injection = needle + '<script defer src="./assets/js/contact-email-guard-v1.js"></script>'
+          for path in root.rglob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              if needle in text and 'contact-email-guard-v1.js' not in text:
+                  path.write_text(text.replace(needle, injection), encoding='utf-8')
+          PY
+
+          grep -q "$public_email" /tmp/tin-tech-site/assets/js/content-defaults-v4.js
+          grep -q "mailto:${public_email}" /tmp/tin-tech-site/privacy.html
+          grep -q "mailto:${public_email}" /tmp/tin-tech-site/terms.html
+          if grep -RIl "$legacy_email" /tmp/tin-tech-site; then
+            echo 'Retired Tin Tech email remains in the deployable artifact.' >&2
+            exit 1
+          fi
+          while IFS= read -r file; do
+            grep -q 'contact-email-guard-v1.js' "$file"
+          done < <(grep -RIl 'api-v3.js' /tmp/tin-tech-site --include='*.html')
+
+          echo 'Tin Tech public email validation passed.'
