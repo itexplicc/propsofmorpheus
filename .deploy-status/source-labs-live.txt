@@ -1,9 +1,11 @@
-Source Labs category experience deployment verified successfully.
-Source commit: 655ba7baca3bb13a9710206fca8af4151a72ea48
+Source Labs advisor portal and landing-page builder deployment verified successfully.
+Source commit: 8cb4f60bbc286fa5f0af3801637bca7848b8520e
 Public URL: https://itexplicc.github.io/propsofmorpheus/source-labs/
 Products URL: https://itexplicc.github.io/propsofmorpheus/source-labs/products.html
 Services URL: https://itexplicc.github.io/propsofmorpheus/source-labs/services.html
 Category URL pattern: https://itexplicc.github.io/propsofmorpheus/source-labs/category.html?slug=<category-slug>
+Custom landing URL pattern: https://itexplicc.github.io/propsofmorpheus/source-labs/landing.html?slug=<landing-slug>
+Client portal URL: https://itexplicc.github.io/propsofmorpheus/source-labs/portal/
 Admin URL: https://itexplicc.github.io/propsofmorpheus/source-labs/admin/
-Experience: category-first-media-v3
-Completed: 2026-08-06T09:03:50Z
+Experience: advisor-portal-universal-pages-v1
+Completed: 2026-08-06T09:28:35Z
