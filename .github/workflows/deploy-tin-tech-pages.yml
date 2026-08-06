@@ -60,12 +60,46 @@ jobs:
           # Tin Tech: publish the complete current folder so direct files such as
           # /tin-tech-packaging/index.html always exist in the Pages artifact.
           cp -R tin-tech-packaging/. _site/tin-tech-packaging/
+
+          # Remove the retired public address from every deployed Tin Tech text
+          # asset, then load a runtime guard before the CMS so stale editable
+          # backend content cannot put it back on public or admin pages.
+          legacy_email="$(printf '%s@%s' 'hockeyundergroundusa' 'gmail.com')"
+          public_email='sales@tintechpackaging.com'
+          while IFS= read -r -d '' file; do
+            sed -i "s/${legacy_email}/${public_email}/g" "$file"
+          done < <(grep -RIlZ --exclude='contact-email-guard-v1.js' "$legacy_email" _site/tin-tech-packaging || true)
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('_site/tin-tech-packaging')
+          needle = '<script defer src="./assets/js/api-v3.js"></script>'
+          injection = needle + '<script defer src="./assets/js/contact-email-guard-v1.js"></script>'
+          for path in root.rglob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              if needle in text and 'contact-email-guard-v1.js' not in text:
+                  path.write_text(text.replace(needle, injection), encoding='utf-8')
+          PY
+
           test -f _site/tin-tech-packaging/index.html
           test -f _site/tin-tech-packaging/portfolio.html
           test -f _site/tin-tech-packaging/product.html
           test -f _site/tin-tech-packaging/admin/index.html
           test -f _site/tin-tech-packaging/assets/js/site.js
+          test -s _site/tin-tech-packaging/assets/js/contact-email-guard-v1.js
           grep -q 'TIN TECH PACKAGING' _site/tin-tech-packaging/index.html
+          grep -q "$public_email" _site/tin-tech-packaging/assets/js/content-defaults-v4.js
+          grep -q "mailto:${public_email}" _site/tin-tech-packaging/privacy.html
+          grep -q "mailto:${public_email}" _site/tin-tech-packaging/terms.html
+          if grep -RIl "$legacy_email" _site/tin-tech-packaging; then
+            echo 'Retired Tin Tech email remains in the Pages artifact.' >&2
+            exit 1
+          fi
+          while IFS= read -r file; do
+            grep -q 'contact-email-guard-v1.js' "$file"
+          done < <(grep -RIl 'api-v3.js' _site/tin-tech-packaging --include='*.html')
+          node --check _site/tin-tech-packaging/assets/js/contact-email-guard-v1.js
 
           python3 mako-site-source/run-build.py _site/mako-pet-food
           test -f _site/mako-pet-food/index.html
@@ -179,11 +213,17 @@ jobs:
         shell: bash
         env:
           ROOT_URL: ${{ steps.deployment.outputs.page_url }}
+          TINTECH_PUBLIC_EMAIL: sales@tintechpackaging.com
         run: |
           set -euo pipefail
+          legacy_email="$(printf '%s@%s' 'hockeyundergroundusa' 'gmail.com')"
           for attempt in {1..30}; do
             if curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/index.html" -o /tmp/tin-tech-index.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/portfolio.html" -o /tmp/tin-tech-portfolio.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/privacy.html" -o /tmp/tin-tech-privacy.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/terms.html" -o /tmp/tin-tech-terms.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/assets/js/content-defaults-v4.js" -o /tmp/tin-tech-defaults.js \
+              && curl --fail --silent --show-error --location "${ROOT_URL}tin-tech-packaging/assets/js/contact-email-guard-v1.js" -o /tmp/tin-tech-email-guard.js \
               && curl --fail --silent --show-error --location "${ROOT_URL}galle-spice/index.html" -o /tmp/galle-spice-index.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}saad-five-year-plan/index.html" -o /tmp/five-year-index.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/index.html" -o /tmp/source-labs-public.html \
@@ -192,13 +232,21 @@ jobs:
               && curl --fail --silent --show-error --location "${ROOT_URL}source-labs/assets/config.js" -o /tmp/source-labs-config.js \
               && grep -q 'TIN TECH PACKAGING' /tmp/tin-tech-index.html \
               && grep -q 'Product portfolio' /tmp/tin-tech-portfolio.html \
+              && grep -q "mailto:${TINTECH_PUBLIC_EMAIL}" /tmp/tin-tech-privacy.html \
+              && grep -q "mailto:${TINTECH_PUBLIC_EMAIL}" /tmp/tin-tech-terms.html \
+              && grep -q "$TINTECH_PUBLIC_EMAIL" /tmp/tin-tech-defaults.js \
+              && grep -q "$TINTECH_PUBLIC_EMAIL" /tmp/tin-tech-email-guard.js \
+              && ! grep -q "$legacy_email" /tmp/tin-tech-privacy.html \
+              && ! grep -q "$legacy_email" /tmp/tin-tech-terms.html \
+              && ! grep -q "$legacy_email" /tmp/tin-tech-defaults.js \
+              && ! grep -q "$legacy_email" /tmp/tin-tech-email-guard.js \
               && grep -q 'Galle Spice' /tmp/galle-spice-index.html \
               && grep -q 'Morpheus' /tmp/five-year-index.html \
               && grep -q 'Source Labs' /tmp/source-labs-public.html \
               && grep -q 'Source Labs' /tmp/source-labs-services.html \
               && grep -q 'Source Labs' /tmp/source-labs-admin.html \
               && grep -q 'aunqmysckjuucmvzqxjp.supabase.co' /tmp/source-labs-config.js; then
-              echo 'Consolidated Pages verification passed.'
+              echo 'Consolidated Pages and Tin Tech email verification passed.'
               exit 0
             fi
             sleep 4
@@ -226,11 +274,12 @@ jobs:
             }
             const body = [
               'Consolidated public sites deployment completed successfully.',
-              'Tin Tech direct index verification passed.',
+              'Tin Tech direct index and sales email verification passed.',
               'Galle Spice, five-year plan and Source Labs verification passed.',
               `Source commit: ${context.sha}`,
               `Pages URL: ${{ steps.deployment.outputs.page_url }}`,
               `Tin Tech URL: ${{ steps.deployment.outputs.page_url }}tin-tech-packaging/index.html`,
+              'Tin Tech public email: sales@tintechpackaging.com',
               `Completed: ${new Date().toISOString()}`,
               ''
             ].join('\n');
@@ -238,7 +287,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path,
-              message: 'Record successful consolidated Pages deployment',
+              message: 'Record verified Tin Tech sales email deployment',
               content: Buffer.from(body).toString('base64'),
               branch: 'main',
               ...(sha ? { sha } : {})
