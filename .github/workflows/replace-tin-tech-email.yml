@@ -1,0 +1,147 @@
+name: Replace Tin Tech Public Email
+
+on:
+  push:
+    branches:
+      - agent/replace-tin-tech-sales-email-20260806
+    paths:
+      - '.github/workflows/replace-tin-tech-email.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  replace:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/replace-tin-tech-sales-email-20260806
+          fetch-depth: 0
+
+      - name: Replace public email and install runtime guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          old = 'hockeyundergroundusa@gmail.com'
+          new = 'sales@tintechpackaging.com'
+          root = Path('.')
+          changed = []
+
+          for path in root.rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              try:
+                  raw = path.read_bytes()
+              except OSError:
+                  continue
+              if b'\0' in raw:
+                  continue
+              try:
+                  text = raw.decode('utf-8')
+              except UnicodeDecodeError:
+                  continue
+              if old in text:
+                  path.write_text(text.replace(old, new), encoding='utf-8')
+                  changed.append(str(path))
+
+          guard_path = Path('tin-tech-packaging/assets/js/contact-email-guard-v1.js')
+          guard_path.parent.mkdir(parents=True, exist_ok=True)
+          guard_path.write_text(r'''(function () {
+            "use strict";
+
+            const legacyEmail = ["hockeyundergroundusa", "gmail.com"].join("@");
+            const publicEmail = "sales@tintechpackaging.com";
+
+            function sanitize(value) {
+              if (typeof value === "string") return value.split(legacyEmail).join(publicEmail);
+              if (Array.isArray(value)) return value.map(sanitize);
+              if (value && typeof value === "object") {
+                return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitize(item)]));
+              }
+              return value;
+            }
+
+            if (window.TinTechContentDefaults) {
+              window.TinTechContentDefaults = sanitize(window.TinTechContentDefaults);
+            }
+
+            const api = window.TinTechAPI;
+            if (api) {
+              for (const name of ["siteContent", "adminData"]) {
+                const original = api[name];
+                if (typeof original === "function") {
+                  api[name] = async (...args) => sanitize(await original(...args));
+                }
+              }
+
+              const originalAdminAction = api.adminAction;
+              if (typeof originalAdminAction === "function") {
+                api.adminAction = async (action, token, body = {}) => sanitize(
+                  await originalAdminAction(action, token, sanitize(body))
+                );
+              }
+            }
+
+            window.TinTechContactEmail = publicEmail;
+          })();
+          ''', encoding='utf-8')
+          changed.append(str(guard_path))
+
+          needle = '<script defer src="./assets/js/api-v3.js"></script>'
+          injection = needle + '<script defer src="./assets/js/contact-email-guard-v1.js"></script>'
+          for path in Path('tin-tech-packaging').rglob('*.html'):
+              text = path.read_text(encoding='utf-8')
+              if needle in text and 'contact-email-guard-v1.js' not in text:
+                  path.write_text(text.replace(needle, injection), encoding='utf-8')
+                  changed.append(str(path))
+
+          remaining = []
+          for path in root.rglob('*'):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              try:
+                  raw = path.read_bytes()
+              except OSError:
+                  continue
+              if b'\0' in raw:
+                  continue
+              try:
+                  text = raw.decode('utf-8')
+              except UnicodeDecodeError:
+                  continue
+              if old in text:
+                  remaining.append(str(path))
+
+          if remaining:
+              raise SystemExit('Legacy email remains in: ' + ', '.join(remaining))
+
+          print('Changed files:')
+          for path in sorted(set(changed)):
+              print(path)
+          PY
+
+          node --check tin-tech-packaging/assets/js/contact-email-guard-v1.js
+          grep -q 'sales@tintechpackaging.com' tin-tech-packaging/assets/js/content-defaults-v4.js
+          grep -q 'mailto:sales@tintechpackaging.com' tin-tech-packaging/privacy.html
+          grep -q 'mailto:sales@tintechpackaging.com' tin-tech-packaging/terms.html
+          grep -R --exclude-dir=.git -n 'hockeyundergroundusa@gmail.com' . && exit 1 || true
+
+      - name: Commit replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tin-tech-packaging
+          if git diff --cached --quiet; then
+            echo 'No Tin Tech email changes were required.'
+            exit 0
+          fi
+          git commit -m 'Replace Tin Tech public contact email'
+          git push origin HEAD:agent/replace-tin-tech-sales-email-20260806
