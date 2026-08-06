@@ -1,9 +1,9 @@
 Source Labs category experience deployment verified successfully.
-Source commit: 51b5a1d1127263e227ec2050f1202a20531d7d7f
+Source commit: 655ba7baca3bb13a9710206fca8af4151a72ea48
 Public URL: https://itexplicc.github.io/propsofmorpheus/source-labs/
 Products URL: https://itexplicc.github.io/propsofmorpheus/source-labs/products.html
 Services URL: https://itexplicc.github.io/propsofmorpheus/source-labs/services.html
 Category URL pattern: https://itexplicc.github.io/propsofmorpheus/source-labs/category.html?slug=<category-slug>
 Admin URL: https://itexplicc.github.io/propsofmorpheus/source-labs/admin/
 Experience: category-first-media-v3
-Completed: 2026-07-30T10:38:16Z
+Completed: 2026-08-06T09:03:50Z
