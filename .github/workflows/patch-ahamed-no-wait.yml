@@ -1,0 +1,51 @@
+name: Patch Ahamed Builder OS no-wait bridge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-ahamed-no-wait.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Builder OS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('saad-five-year-plan/ahamed-builder-os/index.html')
+          s = p.read_text(encoding='utf-8')
+          old = 'Join the correct shared ChatGPT project and read its instructions/files.'
+          new = 'If Saad\'s shared ChatGPT project is available, join it. If it is not available yet, DO NOT WAIT: create a temporary personal ChatGPT Project named “Ahamed × Saad Dev Bridge”, add the No-Wait Bootstrap instructions shown above Day 1, and continue immediately to the repository step.'
+          if old in s:
+              s = s.replace(old, new, 1)
+          marker = '<section class="section searchable" id="days">'
+          if 'AHAMED — NO-WAIT BRIDGE' not in s:
+              bridge = '''<section class="section searchable" id="days"><div class="callout" style="margin-bottom:14px"><h3>AHAMED — NO-WAIT BRIDGE</h3><p><b>Do not wait for Saad if the shared ChatGPT project invite is not there yet.</b> Do not simulate a shared project. Create a temporary personal ChatGPT Project called <b>Ahamed × Saad Dev Bridge</b>, paste the instructions below into that Project's instructions, then continue immediately with the next Day 1 task: open the assigned repository/folder and inspect the real source. When Saad shares the permanent project later, move your active work into it.</p><pre id="bootstrapNoWait">I am onboarding to continue Saad’s existing software builds. My job is to carry outcomes safely, not just generate code. Before changing anything I must identify the authoritative repository/folder, read its current docs and recent history, inspect the real runtime/data path, and separate verified facts from assumptions. I must never invent schema, files, environment variables or business rules; never weaken RLS/security to make a frontend work; never expose secrets; never mix Morpheus, QAJ/NUR OS, Source Labs or other systems; prefer surgical changes over rewrites; work on a task branch; inspect my diff; test the exact user flow plus relevant regressions; and leave a PR/handover with evidence, risks, rollback and next action. ChatGPT is my engineering partner, not my source of truth. If something is unknown, I inspect the repo/database/current docs before asking Saad unless it is genuinely a business decision.</pre><div class="copy"><button class="btn primary" onclick="copy('bootstrapNoWait',this)">Copy temporary Project instructions</button></div></div>'''
+              if marker not in s:
+                  raise SystemExit('Day section marker not found')
+              s = s.replace(marker, bridge, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          grep -q "AHAMED — NO-WAIT BRIDGE" saad-five-year-plan/ahamed-builder-os/index.html
+          grep -q "DO NOT WAIT" saad-five-year-plan/ahamed-builder-os/index.html
+      - name: Commit patch
+        shell: bash
+        run: |
+          if git diff --quiet -- saad-five-year-plan/ahamed-builder-os/index.html; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "Builder OS Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add saad-five-year-plan/ahamed-builder-os/index.html
+          git commit -m "Unblock Ahamed Day 1 without shared project"
+          git push origin HEAD:main
