@@ -1,0 +1,46 @@
+name: Add Ahamed Builder OS Plus gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-ahamed-plus-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add Plus gate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('saad-five-year-plan/ahamed-builder-os/index.html')
+          s=p.read_text(encoding='utf-8')
+          anchor='<div class="days" id="dayList"></div>'
+          gate='''<div class="callout hidden" id="plusGate" style="margin-top:14px;border-color:#3f7651;background:linear-gradient(135deg,rgba(74,222,128,.12),rgba(34,211,238,.08))"><h3>✅ DAY 1 COMPLETE — CHATGPT PLUS GATE UNLOCKED</h3><p><b>Ahamed: now is the right time to ask Saad for ChatGPT Plus.</b> Free was enough to prove your Day-1 workflow. From Day 2 onward you are moving into heavier daily development, longer coding/reasoning sessions, more files and repeated project work. Do not purchase it yourself unless Saad tells you to. Send him the message below and wait for his go-ahead, but you can continue reading the next lessons meanwhile.</p><pre id="plusAskMessage">Bro, I completed Day 1 in Builder OS and the ChatGPT Plus Gate has unlocked. I’ve gone through the safe workflow and I’m ready to start using ChatGPT properly for the development work from Day 2 onward. Can you get Plus activated for my ChatGPT account now?</pre><div class="copy"><button class="btn primary" onclick="copy('plusAskMessage',this)">Copy message to ask Saad</button></div></div>'''
+          if 'id="plusGate"' not in s:
+              if anchor not in s: raise SystemExit('day list anchor missing')
+              s=s.replace(anchor,anchor+gate,1)
+          if 'function refreshPlusGate()' not in s:
+              script='''<script>function refreshPlusGate(){const g=document.getElementById('plusGate');if(!g)return;const q=[...document.querySelectorAll('[data-task][data-day="1"]')];const done=q.length>0&&q.every(x=>x.checked);g.classList.toggle('hidden',!done)}setInterval(refreshPlusGate,900);addEventListener('focus',refreshPlusGate);addEventListener('change',e=>{if(e.target.matches&&e.target.matches('[data-task][data-day="1"]'))setTimeout(refreshPlusGate,100)});</script>'''
+              s=s.replace('</body>',script+'\n</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          grep -q 'CHATGPT PLUS GATE UNLOCKED' saad-five-year-plan/ahamed-builder-os/index.html
+          grep -q 'refreshPlusGate' saad-five-year-plan/ahamed-builder-os/index.html
+      - name: Commit
+        shell: bash
+        run: |
+          if git diff --quiet -- saad-five-year-plan/ahamed-builder-os/index.html; then exit 0; fi
+          git config user.name "Builder OS Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add saad-five-year-plan/ahamed-builder-os/index.html
+          git commit -m "Unlock ChatGPT Plus request after Ahamed Day 1"
+          git push origin HEAD:main
