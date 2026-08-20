@@ -1,0 +1,46 @@
+name: Publish Jonathan HQ images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.deploy-hq/jhr-images.zip'
+      - '.github/workflows/publish-jhr-hq-images.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Replace Jonathan riding photos with high-quality originals
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p galle-spice/jonathan-horse-riding/assets
+          unzip -o .deploy-hq/jhr-images.zip -d galle-spice/jonathan-horse-riding/assets
+          test -s galle-spice/jonathan-horse-riding/assets/ride-1.avif
+          test -s galle-spice/jonathan-horse-riding/assets/ride-2.avif
+          test -s galle-spice/jonathan-horse-riding/assets/ride-3.avif
+          test -s galle-spice/jonathan-horse-riding/assets/ride-4.avif
+          test -s galle-spice/jonathan-horse-riding/assets/ride-5.avif
+          test -s galle-spice/jonathan-horse-riding/assets/ride-6.avif
+
+      - name: Commit upgraded photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add galle-spice/jonathan-horse-riding/assets/ride-*.avif
+          if git diff --cached --quiet; then
+            echo 'No image changes to publish.'
+            exit 0
+          fi
+          git commit -m 'Upgrade Jonathan Horse Riding photo quality'
+          git push
