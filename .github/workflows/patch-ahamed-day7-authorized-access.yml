@@ -1,0 +1,41 @@
+name: Patch Ahmed Builder OS Day 7 admin verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-ahamed-day7-authorized-access.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Day 7 checklist
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('saad-five-year-plan/ahamed-builder-os/index.html')
+          s=p.read_text(encoding='utf-8')
+          old='Verify one content edit from admin through public rendering.'
+          new='Prove one admin → data → public-render path from the authoritative code. If you have an authorised admin account, verify it live; if not, trace the admin write and public read/render without using shared credentials or making a production mutation.'
+          if old not in s:
+              raise SystemExit('Target Day 7 checklist text not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          grep -q 'Prove one admin' saad-five-year-plan/ahamed-builder-os/index.html
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'Builder OS Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add saad-five-year-plan/ahamed-builder-os/index.html
+          git commit -m 'Make Day 7 admin verification access-aware'
+          git push origin HEAD:main
