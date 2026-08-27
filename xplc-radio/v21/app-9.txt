@@ -1,0 +1,60 @@
+/* v23 resilient playback recovery: recover from browser pause/media error without refresh */
+let playbackNeedsGesture=false;
+function mediaBroken(el){return !el||!!el.error||el.networkState===HTMLMediaElement.NETWORK_NO_SOURCE||!el.getAttribute('src')}
+loadInto=async function(el,t,seek=0,auto=false){
+ if(!t||!el)return false;
+ el.crossOrigin='anonymous';
+ const same=el.dataset.trackId===t.id,broken=mediaBroken(el)||el.readyState===0;
+ if(!same||broken){
+   try{el.pause()}catch{}
+   try{el.removeAttribute('src');el.load()}catch{}
+   el.dataset.trackId=t.id;el.src=t.src;el.preload='auto';el.load();
+ }
+ const ready=await waitMedia(el,5000);
+ if(!ready&&mediaBroken(el))return false;
+ try{const cap=Math.max(0,(Number.isFinite(el.duration)?el.duration:t.duration)-.08);if(Math.abs((el.currentTime||0)-seek)>.15)el.currentTime=Math.max(0,Math.min(seek,cap))}catch{}
+ if(auto){try{await el.play();return true}catch{return false}}
+ return ready||el.readyState>=1;
+};
+async function userGesturePlay(){
+ const info=scheduleInfo();if(!info)return;
+ const a=activeAudio(),s=standbyAudio();
+ transitioning=false;
+ try{s.pause()}catch{}
+ if(gains[1-activeIndex])gains[1-activeIndex].gain.value=0;
+ const mustReload=a.dataset.trackId!==info.track.id||mediaBroken(a)||a.readyState===0;
+ if(mustReload){
+   try{a.pause()}catch{}
+   try{a.removeAttribute('src');a.load()}catch{}
+   a.crossOrigin='anonymous';a.dataset.trackId=info.track.id;a.src=info.track.src;a.preload='auto';a.load();
+ }
+ // Invoke AudioContext.resume() and media play() directly from the tap before any await.
+ try{if(!audioCtx)initAudioGraph()}catch(e){console.warn('audio graph recovery',e)}
+ let resumePromise=Promise.resolve();
+ try{if(audioCtx?.state==='suspended')resumePromise=audioCtx.resume()}catch{}
+ let playPromise;
+ try{playPromise=a.play()}catch(e){playPromise=Promise.reject(e)}
+ setPlaying(true);
+ let playError=null;
+ try{await playPromise}catch(e){playError=e}
+ try{await resumePromise}catch{}
+ if(playError){
+   playbackNeedsGesture=true;setPlaying(false);
+   const blocked=playError?.name==='NotAllowedError';
+   toast(blocked?'Browser paused audio — tap ▶ once more to reconnect':'Audio connection dropped — tap ▶ to reconnect');
+   return;
+ }
+ playbackNeedsGesture=false;
+ await waitMedia(a,3500);
+ const fresh=scheduleInfo()||info;
+ if(a.dataset.trackId!==fresh.track.id){
+   // The live boundary moved while reconnecting. Load the current live track now that playback permission is restored.
+   await hardJoin(fresh,true);return;
+ }
+ try{const cap=Math.max(0,(Number.isFinite(a.duration)?a.duration:fresh.track.duration)-.08);a.currentTime=Math.max(0,Math.min(fresh.elapsed,cap))}catch{}
+ a.playbackRate=nominalRate(a,fresh.track);activeTrackId=fresh.track.id;renderTrack(fresh);setPlaying(true);prepareNext(fresh);
+}
+togglePlay=async function(){
+ if(wantedPlaying){try{activeAudio().pause()}catch{}setPlaying(false);return}
+ return userGesturePlay();
+};
