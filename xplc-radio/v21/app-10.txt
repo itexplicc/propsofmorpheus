@@ -1,0 +1,10 @@
+/* v24 anonymous active-listener count */
+let listenerCount=0,presenceBusy=false;
+const presenceRenderShell=renderShell,presenceSetPlaying=setPlaying;
+function paintListenerCount(){const e=$('#listenerCount');if(!e)return;e.textContent=`● ${listenerCount} ${listenerCount===1?'LISTENING':'LISTENING'}`}
+renderShell=function(){presenceRenderShell();const tools=$('.topTools');if(tools&&!$('#listenerCount')){const e=document.createElement('span');e.id='listenerCount';e.className='chip listenerChip';e.textContent='● — LISTENING';const after=$('#songCount');after?.insertAdjacentElement('afterend',e)}paintListenerCount()};
+async function presencePing(force=null){if(presenceBusy)return;presenceBusy=true;try{const playing=force===null?(wantedPlaying&&!activeAudio().paused&&!mediaBroken(activeAudio())):!!force;const j=await pubApi('presence',{playing});listenerCount=Math.max(0,Number(j.count)||0);paintListenerCount()}catch{}finally{presenceBusy=false}}
+setPlaying=function(v){presenceSetPlaying(v);setTimeout(()=>presencePing(v&&!activeAudio().paused),220)};
+setTimeout(()=>presencePing(false),900);
+setInterval(()=>presencePing(null),25000);
+window.addEventListener('focus',()=>presencePing(null));
