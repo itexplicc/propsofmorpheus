@@ -1,10 +1,17 @@
-/* v24 anonymous active-listener count */
-let listenerCount=0,presenceBusy=false;
-const presenceRenderShell=renderShell,presenceSetPlaying=setPlaying;
+/* v25 anonymous active-listener sessions — resilient to mobile background timer throttling */
+let listenerCount=0,presenceBusy=false,lastPresenceTrack='';
+const presenceRenderShell=renderShell,presenceSetPlaying=setPlaying,presenceRenderTrack=renderTrack;
 function paintListenerCount(){const e=$('#listenerCount');if(!e)return;e.textContent=`● ${listenerCount} LISTENING`}
 renderShell=function(){presenceRenderShell();const line=$('.liveLine');if(line&&!$('#listenerCount')){const e=document.createElement('span');e.id='listenerCount';e.className='listenerNow';e.textContent='● — LISTENING';e.style.marginLeft='auto';e.style.fontSize='10px';e.style.letterSpacing='.08em';e.style.opacity='.78';e.style.whiteSpace='nowrap';line.appendChild(e)}paintListenerCount()};
 async function presencePing(force=null){if(presenceBusy)return;presenceBusy=true;try{const playing=force===null?(wantedPlaying&&!activeAudio().paused&&!mediaBroken(activeAudio())):!!force;const j=await pubApi('presence',{playing});listenerCount=Math.max(0,Number(j.count)||0);paintListenerCount()}catch{}finally{presenceBusy=false}}
-setPlaying=function(v){presenceSetPlaying(v);setTimeout(()=>presencePing(v&&!activeAudio().paused),220)};
+// Intent changes are authoritative: a requested play starts a session immediately; a deliberate pause ends it immediately.
+setPlaying=function(v){presenceSetPlaying(v);if(v)setTimeout(()=>presencePing(true),180);else presencePing(false)};
+// Track boundaries are reliable even when Android throttles normal setInterval timers in the background.
+renderTrack=function(info){presenceRenderTrack(info);const id=info?.track?.id||'';if(wantedPlaying&&id&&id!==lastPresenceTrack){lastPresenceTrack=id;setTimeout(()=>presencePing(true),60)}};
+// Actual media playback is an additional positive heartbeat. Do not remove on automatic/browser pauses while the app still intends to play.
+audioEls.forEach(a=>{a.addEventListener('playing',()=>{if(a===activeAudio()&&wantedPlaying)presencePing(true)});a.addEventListener('pause',()=>{if(a===activeAudio()&&!wantedPlaying&&!transitioning)presencePing(false)})});
+// Foreground heartbeats keep the displayed number fresh; the server keeps a longer session window for locked-screen/background listening.
 setTimeout(()=>presencePing(false),900);
-setInterval(()=>presencePing(null),25000);
+setInterval(()=>presencePing(null),60000);
 window.addEventListener('focus',()=>presencePing(null));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)presencePing(null)});
