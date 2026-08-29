@@ -1,9 +1,14 @@
 /* v25 first-visit tuning + persistent home Clean/Explicit control */
-const UX_ONBOARD='xplc_radio_onboarded_v25',UX_CONTENT='xplc_radio_content_mode_v25';
-const uxHadPrefs=!!localStorage.getItem('xplc_radio_prefs'),uxNeedsFirstTune=!uxHadPrefs&&localStorage.getItem(UX_ONBOARD)!=='1';
+const UX_ONBOARD='xplc_radio_onboarded_v25',UX_PENDING='xplc_radio_first_tune_pending_v25',UX_CONTENT='xplc_radio_content_mode_v25';
+const uxHadPrefs=!!localStorage.getItem('xplc_radio_prefs');
+let uxNeedsFirstTune=false;
+if(localStorage.getItem(UX_ONBOARD)==='1')uxNeedsFirstTune=false;
+else if(localStorage.getItem(UX_PENDING)==='1')uxNeedsFirstTune=true;
+else if(uxHadPrefs){localStorage.setItem(UX_ONBOARD,'1');uxNeedsFirstTune=false}
+else{localStorage.setItem(UX_PENDING,'1');uxNeedsFirstTune=true}
 const uxSavedContent=localStorage.getItem(UX_CONTENT);
 // v25 safety rule: unless this version has an explicit saved choice, start Clean.
-if(uxSavedContent==='explicit')prefs.cleanMode=false;else if(uxSavedContent==='clean')prefs.cleanMode=true;else prefs.cleanMode=true;
+if(uxSavedContent==='explicit')prefs.cleanMode=false;else prefs.cleanMode=true;
 draft=structuredClone(prefs);
 let uxFirstTuneShown=false;
 const uxRenderTrack=renderTrack;
@@ -13,7 +18,7 @@ renderTrack=function(info){uxRenderTrack(info);paintContentMode()};
 async function switchContentMode(){const was=wantedPlaying;prefs.cleanMode=!prefs.cleanMode;draft.cleanMode=prefs.cleanMode;localStorage.setItem(UX_CONTENT,prefs.cleanMode?'clean':'explicit');savePrefs();applyPrefs(false);paintContentMode();if(was&&pool.length){setPlaying(true);await hardJoin(scheduleInfo(),true)}navigator.vibrate?.(18)}
 function firstTuneCopy(){return prefs.ui==='si'?{ey:'පළමු TUNE එක',title:'ඔබේ XPLC Radio එක tune කරන්න.',desc:'ඔබට අහන්න ඕන දේ තෝරන්න. Clean mode එක default. මේ device එකට තේරීම් මතක තියාගන්නවා.',note:'භාෂාව, vibe එක සහ ගීත වර්ගය තෝරන්න. පස්සේ ඕන වෙලාවක TUNE එකෙන් වෙනස් කරන්න පුළුවන්.',all:'හැමදේම PLAY කරන්න',go:'RADIO එකට යන්න'}:{ey:'FIRST TUNE',title:'Tune your XPLC Radio.',desc:'Choose what you want to hear. Clean is on by default, and this device will remember your signal.',note:'Pick a language, vibe or type — or leave them open. You can retune anytime from the Radio.',all:'JUST PLAY XPLC',go:'ENTER XPLC RADIO'}}
 function decorateFirstTune(){const p=$('#tunePanel');if(!p)return;const c=firstTuneCopy(),head=p.querySelector('.panelHead');p.classList.add('firstTune');document.body.classList.add('firstTuneOpen');if(head){const sm=head.querySelector('small'),h=head.querySelector('h2'),d=head.querySelector('p');if(sm)sm.textContent=c.ey;if(h)h.textContent=c.title;if(d)d.textContent=c.desc}const summary=$('#draftSummary')?.closest('.signalSummary');if(summary&&!$('#firstTuneNote'))summary.insertAdjacentHTML('beforeend',`<p id="firstTuneNote" class="firstTuneNote">${esc(c.note)}</p>`);const foot=p.querySelector('.panelFoot');if(foot&&!$('#firstTuneAll'))foot.insertAdjacentHTML('afterbegin',`<button id="firstTuneAll" class="ghost firstTuneAll">${esc(c.all)}</button>`);if($('#applyTune'))$('#applyTune').textContent=c.go}
-function finishFirstTune(){localStorage.setItem(UX_ONBOARD,'1');localStorage.setItem(UX_CONTENT,prefs.cleanMode?'clean':'explicit');const p=$('#tunePanel');p?.classList.remove('firstTune');document.body.classList.remove('firstTuneOpen')}
+function finishFirstTune(){localStorage.setItem(UX_ONBOARD,'1');localStorage.removeItem(UX_PENDING);localStorage.setItem(UX_CONTENT,prefs.cleanMode?'clean':'explicit');const p=$('#tunePanel');p?.classList.remove('firstTune');document.body.classList.remove('firstTuneOpen')}
 function showFirstTune(){if(!uxNeedsFirstTune||uxFirstTuneShown)return;if(!$('#tunePanel')||!$('#applyTune')||!all.length){setTimeout(showFirstTune,120);return}uxFirstTuneShown=true;prefs.cleanMode=true;draft={languages:[],genres:[],types:[],cleanMode:true,ui:prefs.ui};renderTuner();decorateFirstTune();openPanel('tunePanel')}
 document.addEventListener('click',e=>{const t=e.target instanceof Element?e.target:null;if(!t)return;if(t.closest('#contentModeBtn')){e.preventDefault();switchContentMode();return}if(t.closest('#firstTuneAll')){e.preventDefault();draft={...draft,languages:[],genres:[],types:[],cleanMode:true};localStorage.setItem(UX_CONTENT,'clean');renderTuner();decorateFirstTune();setTimeout(()=>$('#applyTune')?.click(),0);return}if(t.closest('#applyTune'))setTimeout(()=>{finishFirstTune();paintContentMode()},0)});
 const uxStyle=document.createElement('style');uxStyle.textContent=`
