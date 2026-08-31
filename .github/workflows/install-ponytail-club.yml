@@ -76,6 +76,58 @@ jobs:
           rm -rf _site/ponytail-club
           tar -xJf /tmp/ponytail-club-release.tar.xz -C _site --no-same-owner
 
+          # PTC mobile polish v1: fix oversized menu logo clipping and compressed display headings.
+          cat >> _site/ponytail-club/assets/style.css <<'CSS'
+          /* PTC mobile polish v1 */
+          @media (max-width:780px){
+            .mobile-head{
+              min-height:82px;
+              height:auto;
+              padding-top:max(8px, env(safe-area-inset-top));
+              padding-bottom:8px;
+            }
+            .mobile-head img{
+              width:145px;
+              max-width:48vw;
+              max-height:58px;
+              height:auto;
+              object-fit:contain;
+              flex:0 0 auto;
+            }
+            .mobile-body{
+              padding-top:26px;
+              padding-bottom:calc(76px + env(safe-area-inset-bottom));
+            }
+            .mobile-body>a{
+              line-height:1.08;
+              letter-spacing:.005em;
+            }
+            .mobile-sub a{
+              line-height:1.08;
+              letter-spacing:.005em;
+            }
+            .mega-title{
+              font-size:clamp(58px,17vw,86px);
+              line-height:.91;
+              letter-spacing:-.022em;
+            }
+            .about-grid .mega-title,
+            .contact-grid .mega-title,
+            .policy .mega-title,
+            .faq-wrap .mega-title{
+              line-height:.91;
+              letter-spacing:-.022em;
+            }
+          }
+          @media (max-width:470px){
+            .mega-title{
+              font-size:clamp(56px,16.8vw,76px);
+              line-height:.93;
+              letter-spacing:-.012em;
+            }
+          }
+          CSS
+
           for page in index shop new-arrivals youth adult hoodies tshirts socks accessories product lookbook about contact faq shipping search wishlist cart; do
             test -f "_site/ponytail-club/${page}.html"
           done
@@ -83,6 +135,7 @@ jobs:
           test -s _site/ponytail-club/assets/app.js
           test -s _site/ponytail-club/assets/catalog.js
           test -s _site/ponytail-club/assets/pages.js
+          grep -q 'PTC mobile polish v1' _site/ponytail-club/assets/style.css
           node --check _site/ponytail-club/assets/app.js
           node --check _site/ponytail-club/assets/catalog.js
           node --check _site/ponytail-club/assets/pages.js
@@ -107,11 +160,13 @@ jobs:
               && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/shop.html" -o /tmp/pt-shop.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/hoodies.html" -o /tmp/pt-hoodies.html \
               && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/product.html?id=we-chirp-youth" -o /tmp/pt-product.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/assets/style.css" -o /tmp/pt-style.css \
               && grep -q 'assets/app.js' /tmp/pt-home.html \
               && grep -q 'assets/app.js' /tmp/pt-shop.html \
               && grep -q 'assets/app.js' /tmp/pt-hoodies.html \
-              && grep -q 'assets/app.js' /tmp/pt-product.html; then
-              echo 'Ponytail Club multi-page site is live.'
+              && grep -q 'assets/app.js' /tmp/pt-product.html \
+              && grep -q 'PTC mobile polish v1' /tmp/pt-style.css; then
+              echo 'Ponytail Club multi-page site with mobile polish is live.'
               exit 0
             fi
             sleep 4
