@@ -1,4 +1,4 @@
-name: Install Ponytail Club Pages
+name: Keep Ponytail Club on Public Pages
 
 on:
   push:
@@ -6,106 +6,115 @@ on:
       - main
     paths:
       - '.github/workflows/install-ponytail-club.yml'
+      - 'ponytail-club-build/**'
+  workflow_run:
+    workflows:
+      - 'Deploy Consolidated Public Sites to GitHub Pages'
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-ponytail
+  cancel-in-progress: true
 
 jobs:
-  install:
+  deploy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Add Ponytail Club to consolidated Pages workflow
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Reuse consolidated public-site builder
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path('.github/workflows/deploy-tin-tech-pages.yml')
-          text = path.read_text(encoding='utf-8')
-
-          trigger_anchor = "      - 'galle-spice/**'\n      - '.github/workflows/deploy-tin-tech-pages.yml'"
-          trigger_replacement = "      - 'galle-spice/**'\n      - 'ponytail-club-build/**'\n      - '.github/workflows/deploy-tin-tech-pages.yml'"
-          if "'ponytail-club-build/**'" not in text:
-              if trigger_anchor not in text:
-                  raise SystemExit('Could not find Pages trigger insertion point')
-              text = text.replace(trigger_anchor, trigger_replacement, 1)
-
-          anchor = "          cp -R saad-five-year-plan/. _site/saad-five-year-plan/\n"
-          lines = [
-              "          # Ponytail Club: publish the finished multi-page storefront.",
-              "          for part in ponytail-club-build/release-20260901.tar.xz.b64.{00..04}; do",
-              "            test -s \"$part\"",
-              "          done",
-              "          cat ponytail-club-build/release-20260901.tar.xz.b64.{00..04} > /tmp/ponytail-club-release.b64",
-              "          base64 --decode /tmp/ponytail-club-release.b64 > /tmp/ponytail-club-release.tar.xz",
-              "          xz --test /tmp/ponytail-club-release.tar.xz",
-              "          tar -tJf /tmp/ponytail-club-release.tar.xz >/dev/null",
-              "          rm -rf _site/ponytail-club",
-              "          tar -xJf /tmp/ponytail-club-release.tar.xz -C _site --no-same-owner",
-              "",
-              "          test -f _site/ponytail-club/index.html",
-              "          test -f _site/ponytail-club/shop.html",
-              "          test -f _site/ponytail-club/new-arrivals.html",
-              "          test -f _site/ponytail-club/youth.html",
-              "          test -f _site/ponytail-club/adult.html",
-              "          test -f _site/ponytail-club/hoodies.html",
-              "          test -f _site/ponytail-club/tshirts.html",
-              "          test -f _site/ponytail-club/socks.html",
-              "          test -f _site/ponytail-club/accessories.html",
-              "          test -f _site/ponytail-club/product.html",
-              "          test -f _site/ponytail-club/lookbook.html",
-              "          test -f _site/ponytail-club/about.html",
-              "          test -f _site/ponytail-club/contact.html",
-              "          test -f _site/ponytail-club/faq.html",
-              "          test -f _site/ponytail-club/shipping.html",
-              "          test -f _site/ponytail-club/search.html",
-              "          test -f _site/ponytail-club/wishlist.html",
-              "          test -f _site/ponytail-club/cart.html",
-              "          test -s _site/ponytail-club/assets/style.css",
-              "          test -s _site/ponytail-club/assets/app.js",
-              "          test -s _site/ponytail-club/assets/catalog.js",
-              "          test -s _site/ponytail-club/assets/pages.js",
-              "          node --check _site/ponytail-club/assets/app.js",
-              "          node --check _site/ponytail-club/assets/catalog.js",
-              "          node --check _site/ponytail-club/assets/pages.js",
-              "",
-          ]
-          block = "\n".join(lines)
-          if '# Ponytail Club: publish the finished multi-page storefront.' not in text:
-              if anchor not in text:
-                  raise SystemExit('Could not find Pages build insertion point')
-              text = text.replace(anchor, block + anchor, 1)
-
-          path.write_text(text, encoding='utf-8')
+          workflow = Path('.github/workflows/deploy-tin-tech-pages.yml')
+          lines = workflow.read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines) if line.strip() == '- name: Prepare public sites')
+          run_index = next(i for i in range(start + 1, len(lines)) if lines[i].strip() == 'run: |')
+          end = next((i for i in range(run_index + 1, len(lines)) if lines[i].startswith('      - name:')), len(lines))
+          body = []
+          for line in lines[run_index + 1:end]:
+              if line.startswith('          '):
+                  body.append(line[10:])
+              elif not line.strip():
+                  body.append('')
+              else:
+                  raise SystemExit(f'Unexpected indentation while extracting prepare script: {line!r}')
+          Path('/tmp/prepare-public-sites.sh').write_text('\n'.join(body) + '\n', encoding='utf-8')
           PY
+          bash /tmp/prepare-public-sites.sh
 
-      - name: Commit Pages workflow update
+      - name: Add finished Ponytail Club multi-page site
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- .github/workflows/deploy-tin-tech-pages.yml; then
-            echo 'Pages workflow already contains Ponytail Club.'
-          else
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add .github/workflows/deploy-tin-tech-pages.yml
-            git commit -m 'Deploy Ponytail Club multi-page storefront'
-            git push origin HEAD:main
-          fi
+          for part in ponytail-club-build/release-20260901.tar.xz.b64.{00..04}; do
+            test -s "$part"
+          done
+          cat ponytail-club-build/release-20260901.tar.xz.b64.{00..04} > /tmp/ponytail-club-release.b64
+          base64 --decode /tmp/ponytail-club-release.b64 > /tmp/ponytail-club-release.tar.xz
+          xz --test /tmp/ponytail-club-release.tar.xz
+          rm -rf _site/ponytail-club
+          tar -xJf /tmp/ponytail-club-release.tar.xz -C _site --no-same-owner
 
-      - name: Start consolidated Pages deployment
+          for page in index shop new-arrivals youth adult hoodies tshirts socks accessories product lookbook about contact faq shipping search wishlist cart; do
+            test -f "_site/ponytail-club/${page}.html"
+          done
+          test -s _site/ponytail-club/assets/style.css
+          test -s _site/ponytail-club/assets/app.js
+          test -s _site/ponytail-club/assets/catalog.js
+          test -s _site/ponytail-club/assets/pages.js
+          node --check _site/ponytail-club/assets/app.js
+          node --check _site/ponytail-club/assets/catalog.js
+          node --check _site/ponytail-club/assets/pages.js
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify Ponytail Club pages
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ROOT_URL: ${{ steps.deployment.outputs.page_url }}
         shell: bash
         run: |
           set -euo pipefail
-          sleep 3
-          gh workflow run deploy-tin-tech-pages.yml --ref main
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/index.html" -o /tmp/pt-home.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/shop.html" -o /tmp/pt-shop.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/hoodies.html" -o /tmp/pt-hoodies.html \
+              && curl --fail --silent --show-error --location "${ROOT_URL}ponytail-club/product.html?id=we-chirp-youth" -o /tmp/pt-product.html \
+              && grep -q 'assets/app.js' /tmp/pt-home.html \
+              && grep -q 'assets/app.js' /tmp/pt-shop.html \
+              && grep -q 'assets/app.js' /tmp/pt-hoodies.html \
+              && grep -q 'assets/app.js' /tmp/pt-product.html; then
+              echo 'Ponytail Club multi-page site is live.'
+              exit 0
+            fi
+            sleep 4
+          done
+          echo 'Ponytail Club live verification failed.' >&2
+          exit 1
