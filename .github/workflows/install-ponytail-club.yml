@@ -39,44 +39,46 @@ jobs:
               text = text.replace(trigger_anchor, trigger_replacement, 1)
 
           anchor = "          cp -R saad-five-year-plan/. _site/saad-five-year-plan/\n"
-          block = r'''          # Ponytail Club: publish the finished multi-page storefront.
-          for part in ponytail-club-build/release-20260901.tar.xz.b64.{00..04}; do
-            test -s "$part"
-          done
-          cat ponytail-club-build/release-20260901.tar.xz.b64.{00..04} > /tmp/ponytail-club-release.b64
-          base64 --decode /tmp/ponytail-club-release.b64 > /tmp/ponytail-club-release.tar.xz
-          xz --test /tmp/ponytail-club-release.tar.xz
-          tar -tJf /tmp/ponytail-club-release.tar.xz >/dev/null
-          rm -rf _site/ponytail-club
-          tar -xJf /tmp/ponytail-club-release.tar.xz -C _site --no-same-owner
-
-          test -f _site/ponytail-club/index.html
-          test -f _site/ponytail-club/shop.html
-          test -f _site/ponytail-club/new-arrivals.html
-          test -f _site/ponytail-club/youth.html
-          test -f _site/ponytail-club/adult.html
-          test -f _site/ponytail-club/hoodies.html
-          test -f _site/ponytail-club/tshirts.html
-          test -f _site/ponytail-club/socks.html
-          test -f _site/ponytail-club/accessories.html
-          test -f _site/ponytail-club/product.html
-          test -f _site/ponytail-club/lookbook.html
-          test -f _site/ponytail-club/about.html
-          test -f _site/ponytail-club/contact.html
-          test -f _site/ponytail-club/faq.html
-          test -f _site/ponytail-club/shipping.html
-          test -f _site/ponytail-club/search.html
-          test -f _site/ponytail-club/wishlist.html
-          test -f _site/ponytail-club/cart.html
-          test -s _site/ponytail-club/assets/style.css
-          test -s _site/ponytail-club/assets/app.js
-          test -s _site/ponytail-club/assets/catalog.js
-          test -s _site/ponytail-club/assets/pages.js
-          node --check _site/ponytail-club/assets/app.js
-          node --check _site/ponytail-club/assets/catalog.js
-          node --check _site/ponytail-club/assets/pages.js
-
-'''
+          lines = [
+              "          # Ponytail Club: publish the finished multi-page storefront.",
+              "          for part in ponytail-club-build/release-20260901.tar.xz.b64.{00..04}; do",
+              "            test -s \"$part\"",
+              "          done",
+              "          cat ponytail-club-build/release-20260901.tar.xz.b64.{00..04} > /tmp/ponytail-club-release.b64",
+              "          base64 --decode /tmp/ponytail-club-release.b64 > /tmp/ponytail-club-release.tar.xz",
+              "          xz --test /tmp/ponytail-club-release.tar.xz",
+              "          tar -tJf /tmp/ponytail-club-release.tar.xz >/dev/null",
+              "          rm -rf _site/ponytail-club",
+              "          tar -xJf /tmp/ponytail-club-release.tar.xz -C _site --no-same-owner",
+              "",
+              "          test -f _site/ponytail-club/index.html",
+              "          test -f _site/ponytail-club/shop.html",
+              "          test -f _site/ponytail-club/new-arrivals.html",
+              "          test -f _site/ponytail-club/youth.html",
+              "          test -f _site/ponytail-club/adult.html",
+              "          test -f _site/ponytail-club/hoodies.html",
+              "          test -f _site/ponytail-club/tshirts.html",
+              "          test -f _site/ponytail-club/socks.html",
+              "          test -f _site/ponytail-club/accessories.html",
+              "          test -f _site/ponytail-club/product.html",
+              "          test -f _site/ponytail-club/lookbook.html",
+              "          test -f _site/ponytail-club/about.html",
+              "          test -f _site/ponytail-club/contact.html",
+              "          test -f _site/ponytail-club/faq.html",
+              "          test -f _site/ponytail-club/shipping.html",
+              "          test -f _site/ponytail-club/search.html",
+              "          test -f _site/ponytail-club/wishlist.html",
+              "          test -f _site/ponytail-club/cart.html",
+              "          test -s _site/ponytail-club/assets/style.css",
+              "          test -s _site/ponytail-club/assets/app.js",
+              "          test -s _site/ponytail-club/assets/catalog.js",
+              "          test -s _site/ponytail-club/assets/pages.js",
+              "          node --check _site/ponytail-club/assets/app.js",
+              "          node --check _site/ponytail-club/assets/catalog.js",
+              "          node --check _site/ponytail-club/assets/pages.js",
+              "",
+          ]
+          block = "\n".join(lines)
           if '# Ponytail Club: publish the finished multi-page storefront.' not in text:
               if anchor not in text:
                   raise SystemExit('Could not find Pages build insertion point')
