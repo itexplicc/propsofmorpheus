@@ -92,4 +92,4 @@ const chatRenderShellBase=renderShell,chatRenderTrackBase=renderTrack;
 renderShell=function(){chatRenderShellBase();mountChatTrigger()};
 renderTrack=function(info){chatRenderTrackBase(info);if(chatOpen)paintChatNow()};
 setInterval(()=>{if(chatOpen)paintChatAround()},5000);
-if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=26').catch(()=>{});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=27').catch(()=>{});
