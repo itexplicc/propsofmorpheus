@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#070707">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="XPLC Radio">
+  <meta name="description" content="XPLC Radio — one signal, same moment.">
+  <title>XPLC Radio</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/itexplicc/propsofmorpheus@f1b539d080d415539b325c9da00e489a63dea5e7/xplc-radio/v21/styles-1.css" integrity="sha384-derC68uN6/EwjlHx/GJtc55RSCecd0LFPXQPBl1kHnY64n0gdNqWrc2HoxbebGlE" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/itexplicc/propsofmorpheus@f1b539d080d415539b325c9da00e489a63dea5e7/xplc-radio/v21/styles-2.css" integrity="sha384-Ep+gaSoE9ia4t4niSG9j7oS6CEydJYbg5BZP/09qbZbMMYlvGwBcW4O9GOXskmND" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/itexplicc/propsofmorpheus@f1b539d080d415539b325c9da00e489a63dea5e7/xplc-radio/v21/styles-3.css" integrity="sha384-GMy2eh1uF2a8WJURgnOgiiZLK3IEEWIsA3PxzK5QX9iXYw5fg6UZ/bkCy6J1sOEG" crossorigin="anonymous">
+  <link rel="stylesheet" href="/styles-chat.css?v=26">
+</head>
+<body>
+  <div class="ambient" id="ambient"></div>
+  <main id="app" class="shell"></main>
+  <audio id="audioA" preload="auto" playsinline crossorigin="anonymous"></audio>
+  <audio id="audioB" preload="auto" playsinline crossorigin="anonymous"></audio>
+  <section class="panel" id="tunePanel" aria-hidden="true">
+    <header class="panelHead"><div><small data-t="signal">YOUR SIGNAL</small><h2 data-t="tuneTitle">Tune XPLC Radio.</h2><p data-t="tuneDesc">Pick one or many. Same choices = same live moment.</p></div><button class="close" data-close="tunePanel">×</button></header>
+    <div class="panelScroll">
+      <div class="signalSummary"><b id="draftSummary">Everything XPLC</b><p data-t="smartDesc">Language is a hard boundary. Smart Mix only widens genre/type inside your selected languages.</p></div>
+      <div class="tuneGroup"><h3 data-t="language">LANGUAGE</h3><p data-t="languageDesc">Choose one or many languages.</p><div class="choices" id="langChoices"></div></div>
+      <div class="tuneGroup"><h3 data-t="content">CONTENT</h3><p data-t="contentDesc">Clean Mode completely removes tracks marked Explicit.</p><div class="choices" id="cleanChoices"></div></div>
+      <div class="tuneGroup"><h3 data-t="channel">CHANNEL / TYPE</h3><p data-t="channelDesc">Why you want to listen.</p><div class="choices" id="typeChoices"></div></div>
+      <div class="tuneGroup"><h3 data-t="genre">GENRE / SOUND</h3><p data-t="genreDesc">How you want it to feel.</p><div class="choices" id="genreChoices"></div></div>
+    </div>
+    <footer class="panelFoot"><button id="clearTune" class="ghost" data-t="clear">CLEAR</button><button id="applyTune" class="primary" data-t="apply">TUNE SIGNAL</button></footer>
+  </section>
+  <section class="panel" id="lyricsPanel" aria-hidden="true">
+    <header class="panelHead"><div><small data-t="liveLyrics">LIVE LYRICS</small><h2 id="lyricsTitle">Lyrics</h2><p id="lyricsArtist">XPLC</p></div><button class="close" data-close="lyricsPanel">×</button></header>
+    <div class="panelScroll lyricsScroll" id="lyricsBody"></div>
+  </section>
+  <section class="panel" id="installPanel" aria-hidden="true">
+    <header class="panelHead"><div><small data-t="installEy">INSTALL XPLC RADIO</small><h2 data-t="installTitle">Make it feel like an app.</h2><p data-t="installDesc">No app store. No account.</p></div><button class="close" data-close="installPanel">×</button></header>
+    <div class="panelScroll installGuide">
+      <button id="nativeInstall" class="primary installNative hidden" data-t="installNow">INSTALL NOW</button>
+      <article><span>🤖</span><div><b>Android / OnePlus</b><p data-t="androidHelp">Open in Chrome → ⋮ → Install app or Add to Home screen → confirm.</p></div></article>
+      <article><span></span><div><b>iPhone</b><p data-t="iphoneHelp">Open in Safari → Share → Add to Home Screen → Add.</p></div></article>
+      <article><span>◉</span><div><b data-t="afterInstall">After installing</b><p data-t="afterHelp">Your tune and Clean Mode stay remembered on this device.</p></div></article>
+    </div>
+  </section>
+  <section class="immersive" id="immersive" aria-hidden="true">
+    <div class="immersiveBg" id="immersiveBg"></div>
+    <button class="immersiveClose" id="immersiveClose">×</button>
+    <div class="immersiveLive"><i></i><b>LIVE</b><span>XPLC RADIO</span></div>
+    <div class="immersiveVisual"><canvas id="immersiveWave"></canvas><img id="immersiveArt" src="/icon-512.png" alt=""></div>
+    <h2 id="immersiveTitle">XPLC Radio</h2><h3 id="immersiveArtist">XPLC</h3>
+    <div class="immersiveLyric" id="immersiveLyric"></div><div class="immersiveMeta" id="immersiveMeta"></div>
+    <div class="immersiveControls"><button id="immersiveDislike">👎</button><button id="immersivePlay" class="bigPlay">▶</button><button id="immersiveLike">♡</button></div>
+  </section>
+  <div class="toast" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
+  <script src="/boot.js?v=26"></script>
+</body>
+</html>

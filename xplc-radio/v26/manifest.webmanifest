@@ -1,0 +1,13 @@
+{
+  "name": "XPLC Radio",
+  "short_name": "XPLC",
+  "description": "One signal, same moment.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070707",
+  "theme_color": "#070707",
+  "icons": [
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
