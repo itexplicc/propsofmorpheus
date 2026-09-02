@@ -26,8 +26,8 @@ function mountChatSurface(){
 
 function mountChatTrigger(){
   mountChatSurface();
-  const row=$('.secondary');
-  if(row&&!$('#chatBtn'))row.insertAdjacentHTML('beforeend',`<button id="chatBtn" class="chatTrigger" aria-controls="chatPanel" aria-expanded="false">💬 <span>${chatCopy().button}</span><em id="chatUnread" hidden></em></button>`);
+  const line=$('.liveLine');
+  if(line&&!$('#chatBtn'))line.insertAdjacentHTML('beforeend',`<button id="chatBtn" class="chatTrigger" type="button" aria-label="Open listener chat" aria-controls="chatPanel" aria-expanded="false">💬<span>${chatCopy().button}</span><em id="chatUnread" hidden></em></button>`);
   if($('#chatBtn'))$('#chatBtn').onclick=openChat;
   paintChatBadge();paintChatCopy();paintChatNow();
 }
@@ -42,6 +42,7 @@ function paintChatCopy(){
   if($('#chatNameInput'))$('#chatNameInput').placeholder=c.nameHint;
   if($('#chatNameSave'))$('#chatNameSave').textContent=c.enter+' →';
   if($('#chatNameBtn')){$('#chatNameBtn').textContent=chatNickname||c.change;$('#chatNameBtn').title=c.change}
+  if($('#chatBtn')){$('#chatBtn span').textContent=c.button;$('#chatBtn').setAttribute('aria-label',c.room)}
   paintChatAround();
 }
 function paintChatAround(){if($('#chatAround'))$('#chatAround').textContent=`${Math.max(0,Number(listenerCount)||0)} ${chatCopy().around}`}
