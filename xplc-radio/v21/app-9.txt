@@ -58,3 +58,40 @@ togglePlay=async function(){
  if(wantedPlaying){try{activeAudio().pause()}catch{}setPlaying(false);return}
  return userGesturePlay();
 };
+
+let recoveryTimer=null,lastRecoveryAt=0;
+
+function schedulePlaybackRecovery(delay=1200){
+ if(!wantedPlaying||transitioning)return;
+
+ const a=activeAudio();
+ const trackId=a.dataset.trackId;
+ const startTime=a.currentTime||0;
+
+ clearTimeout(recoveryTimer);
+ recoveryTimer=setTimeout(async()=>{
+   if(!wantedPlaying||transitioning||document.hidden)return;
+   if(a!==activeAudio()||a.dataset.trackId!==trackId)return;
+
+   const progressed=Math.abs((a.currentTime||0)-startTime)>.25;
+   const healthy=!a.paused&&!mediaBroken(a)&&a.readyState>=HTMLMediaElement.HAVE_FUTURE_DATA&&progressed;
+
+   if(healthy)return;
+   if(Date.now()-lastRecoveryAt<2500)return;
+
+   lastRecoveryAt=Date.now();
+   await hardJoin(scheduleInfo(),true);
+ },delay);
+}
+
+audioEls.forEach(a=>{
+ a.addEventListener('pause',()=>{
+   if(a===activeAudio()&&wantedPlaying&&!transitioning)schedulePlaybackRecovery(500);
+ });
+ a.addEventListener('stalled',()=>{
+   if(a===activeAudio()&&wantedPlaying)schedulePlaybackRecovery();
+ });
+ a.addEventListener('waiting',()=>{
+   if(a===activeAudio()&&wantedPlaying)schedulePlaybackRecovery();
+ });
+});
