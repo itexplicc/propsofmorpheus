@@ -115,10 +115,6 @@
       "source": "./business-reimagined/concepts/cpm-industries.html"
     },
     {
-      "file": "api/project-capture.js",
-      "source": "./api/project-capture.js"
-    },
-    {
       "file": "api/business-inquiries.js",
       "source": "./api/business-inquiries.js"
     },
@@ -127,8 +123,36 @@
       "source": "./vercel.json"
     },
     {
-      "file": "business-reimagined/_qa.html",
-      "source": "./business-reimagined/_qa.html"
+      "file": "business-reimagined/assets/makara.jpg",
+      "source": "./business-reimagined/assets/makara.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/royal.jpg",
+      "source": "./business-reimagined/assets/royal.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/ponytail.jpg",
+      "source": "./business-reimagined/assets/ponytail.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/hampton.jpg",
+      "source": "./business-reimagined/assets/hampton.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/zeigler.jpg",
+      "source": "./business-reimagined/assets/zeigler.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/daves.jpg",
+      "source": "./business-reimagined/assets/daves.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/shoreham.jpg",
+      "source": "./business-reimagined/assets/shoreham.jpg"
+    },
+    {
+      "file": "business-reimagined/assets/cpm.jpg",
+      "source": "./business-reimagined/assets/cpm.jpg"
     }
   ]
 }

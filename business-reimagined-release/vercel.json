@@ -6,10 +6,6 @@
       "destination": "/api/business-inquiries"
     },
     {
-      "source": "/business-reimagined/api/project-capture",
-      "destination": "/api/project-capture"
-    },
-    {
       "source": "/business-reimagined",
       "destination": "/business-reimagined/index.html"
     },
@@ -36,10 +32,5 @@
         }
       ]
     }
-  ],
-  "functions": {
-    "api/project-capture.js": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
