@@ -1,0 +1,134 @@
+{
+  "project": "morpheus-website-portfolio",
+  "fallbackDeployment": "dpl_7EDX36kJdPciMS7ighH9RejPL83J",
+  "files": [
+    {
+      "file": "api/inquiries.js",
+      "sha": "47d6ff1e8ef38b097d78b278bed8114ea81c1c65"
+    },
+    {
+      "file": "app.js",
+      "sha": "48ce6894d10534fca910496e3339a458c17672fe"
+    },
+    {
+      "file": "assets/apex.webp",
+      "sha": "dd7ea4a330ca505b4bc3b0468e793d94fce2a2d2"
+    },
+    {
+      "file": "assets/morpheus.webp",
+      "sha": "262d569afda8aa76937025ca98de9808d3422ed3"
+    },
+    {
+      "file": "assets/outlaw.webp",
+      "sha": "4eaa865c2be682ade7468877994383a866701214"
+    },
+    {
+      "file": "assets/shokoi.webp",
+      "sha": "8fa9f0fbe1092a974bb403945d61493c45accc14"
+    },
+    {
+      "file": "assets/tintech.webp",
+      "sha": "7c92329e0c85c2f6e79846db30e60f9a7cfa1cbf"
+    },
+    {
+      "file": "concepts/cpm-industries.html",
+      "sha": "76a1cb63c238e7438a53f0fcad83b8331aac9a97"
+    },
+    {
+      "file": "concepts/shoreham-inn.html",
+      "sha": "9f8f851aeaf899f1954657cd232bd4d41f6e45a5"
+    },
+    {
+      "file": "favicon.svg",
+      "sha": "02bba1266f7e952230a07123c6c89255680bc9b9"
+    },
+    {
+      "file": "index.html",
+      "sha": "e88cd171b7837068eb9fe527a0eb945809491a0d"
+    },
+    {
+      "file": "og.svg",
+      "sha": "4507f105b1d11d9c6a706e27cb58aef99caba8b0"
+    },
+    {
+      "file": "package.json",
+      "sha": "d4728c832421206329cd2bcea6f005f13ce33b5f"
+    },
+    {
+      "file": "privacy.html",
+      "sha": "75ad0edcfbf2c2484e7d9fbe9870c69979eacf18"
+    },
+    {
+      "file": "styles.css",
+      "sha": "5a4cd5f721acb84c1bfe6b794168171325554c4c"
+    },
+    {
+      "file": "business-reimagined/assets/apex.webp",
+      "sha": "dd7ea4a330ca505b4bc3b0468e793d94fce2a2d2"
+    },
+    {
+      "file": "business-reimagined/assets/morpheus.webp",
+      "sha": "262d569afda8aa76937025ca98de9808d3422ed3"
+    },
+    {
+      "file": "business-reimagined/assets/outlaw.webp",
+      "sha": "4eaa865c2be682ade7468877994383a866701214"
+    },
+    {
+      "file": "business-reimagined/assets/shokoi.webp",
+      "sha": "8fa9f0fbe1092a974bb403945d61493c45accc14"
+    },
+    {
+      "file": "business-reimagined/assets/tintech.webp",
+      "sha": "7c92329e0c85c2f6e79846db30e60f9a7cfa1cbf"
+    },
+    {
+      "file": "business-reimagined/favicon.svg",
+      "sha": "02bba1266f7e952230a07123c6c89255680bc9b9"
+    },
+    {
+      "file": "business-reimagined/assets/manrope.woff2",
+      "sha": "b42951014c5eca12749d87a4706caf22dc4fe081"
+    },
+    {
+      "file": "business-reimagined/index.html",
+      "source": "./business-reimagined/index.html"
+    },
+    {
+      "file": "business-reimagined/styles.css",
+      "source": "./business-reimagined/styles.css"
+    },
+    {
+      "file": "business-reimagined/app.js",
+      "source": "./business-reimagined/app.js"
+    },
+    {
+      "file": "business-reimagined/privacy.html",
+      "source": "./business-reimagined/privacy.html"
+    },
+    {
+      "file": "business-reimagined/concepts/shoreham-inn.html",
+      "source": "./business-reimagined/concepts/shoreham-inn.html"
+    },
+    {
+      "file": "business-reimagined/concepts/cpm-industries.html",
+      "source": "./business-reimagined/concepts/cpm-industries.html"
+    },
+    {
+      "file": "api/project-capture.js",
+      "source": "./api/project-capture.js"
+    },
+    {
+      "file": "api/business-inquiries.js",
+      "source": "./api/business-inquiries.js"
+    },
+    {
+      "file": "vercel.json",
+      "source": "./vercel.json"
+    },
+    {
+      "file": "business-reimagined/_qa.html",
+      "source": "./business-reimagined/_qa.html"
+    }
+  ]
+}

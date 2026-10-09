@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/business-reimagined/api/inquiries",
+      "destination": "/api/business-inquiries"
+    },
+    {
+      "source": "/business-reimagined/api/project-capture",
+      "destination": "/api/project-capture"
+    },
+    {
+      "source": "/business-reimagined",
+      "destination": "/business-reimagined/index.html"
+    },
+    {
+      "source": "/business-reimagined/",
+      "destination": "/business-reimagined/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/business-reimagined/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/project-capture.js": {
+      "maxDuration": 60
+    }
+  }
+}
