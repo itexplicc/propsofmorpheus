@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="t d">
+  <title id="t">Hands shaping clay on a pottery wheel</title><desc id="d">An original graphic illustration of two hands centering a clay vessel on a pottery wheel.</desc>
+  <rect width="1200" height="760" fill="#f0e5d2"/>
+  <circle cx="980" cy="102" r="310" fill="#e7a443" opacity=".45"/>
+  <path d="M0 614C195 520 337 515 520 590c175 72 323 71 680-35v205H0z" fill="#1d5145"/>
+  <ellipse cx="600" cy="630" rx="390" ry="82" fill="#173d35"/>
+  <ellipse cx="600" cy="594" rx="286" ry="62" fill="#d59b61"/>
+  <path d="M451 577c34-73 42-194 29-285h240c-12 93-2 211 31 285-78 49-223 48-300 0Z" fill="#b9673d"/>
+  <path d="M480 296c23-83 218-83 240 0-42 48-196 49-240 0Z" fill="#d58a56"/>
+  <ellipse cx="600" cy="295" rx="119" ry="36" fill="#8b4933"/>
+  <ellipse cx="600" cy="294" rx="83" ry="20" fill="#e7a86f"/>
+  <path d="M120 236c86 4 189 74 272 180 23 30 29 74 7 105-23 33-72 35-102 8-90-83-164-139-245-163Z" fill="#d79569"/>
+  <path d="M1080 214c-84 16-176 99-243 217-19 33-18 77 8 105 28 29 76 24 102-7 77-95 142-161 219-197Z" fill="#d79569"/>
+  <path d="M295 418c42-8 101 9 153 48M907 420c-40-3-96 18-143 64" fill="none" stroke="#744535" stroke-width="12" stroke-linecap="round" opacity=".45"/>
+  <g fill="#173d35" font-family="Georgia,serif"><text x="70" y="105" font-size="55">Feet of Clay</text><text x="74" y="148" font-family="Arial,sans-serif" font-size="17" letter-spacing="5">BROOKLINE · EST. 1974</text></g>
+</svg>
